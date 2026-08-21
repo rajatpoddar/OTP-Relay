@@ -23,7 +23,6 @@ private val Outline = Color(0xFF76777D)
 private val OutlineVariant = Color(0xFFC6C6CD)
 private val Error = Color(0xFFBA1A1A)
 private val ErrorContainer = Color(0xFFFFDAD6)
-private val TertiaryFixedDim = Color(0xFF4EDEA3)
 
 private val LightColorScheme = lightColorScheme(
     primary = Primary,
@@ -45,14 +44,20 @@ fun OTPRelayTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    val colorScheme = LightColorScheme // Use light theme for government portal
+    val colorScheme = LightColorScheme
 
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
-            val window = (view.context as Activity).window
-            window.statusBarColor = Primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+            try {
+                val window = (view.context as? Activity)?.window
+                if (window != null) {
+                    window.statusBarColor = Primary.toArgb()
+                    WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+                }
+            } catch (_: Exception) {
+                // Ignore if Activity not available
+            }
         }
     }
 

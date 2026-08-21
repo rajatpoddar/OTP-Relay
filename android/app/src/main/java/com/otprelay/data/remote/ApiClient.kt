@@ -9,7 +9,12 @@ import java.util.concurrent.TimeUnit
 
 object ApiClient {
 
-    private const val BASE_URL = "http://10.0.2.2:8000/" // Android emulator localhost
+    private var BASE_URL = "http://192.168.29.101:8061/"
+
+    fun setBaseUrl(url: String) {
+        BASE_URL = url
+        retrofit = null // Force rebuild
+    }
 
     private var authToken: String? = null
 
@@ -37,13 +42,18 @@ object ApiClient {
         .readTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    private val retrofit = Retrofit.Builder()
-        .baseUrl(BASE_URL)
-        .client(client)
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
+    private var retrofit: Retrofit? = null
+
+    private fun getRetrofit(): Retrofit {
+        return retrofit ?: Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .also { retrofit = it }
+    }
 
     fun createApiService(): ApiService {
-        return retrofit.create(ApiService::class.java)
+        return getRetrofit().create(ApiService::class.java)
     }
 }
