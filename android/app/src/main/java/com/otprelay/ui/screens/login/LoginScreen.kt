@@ -1,0 +1,192 @@
+package com.otprelay.ui.screens.login
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.otprelay.OTPRelayApp
+import com.otprelay.data.remote.ApiClient
+import com.otprelay.data.model.LoginRequest
+import com.otprelay.util.PreferencesManager
+import kotlinx.coroutines.launch
+
+@Composable
+fun LoginScreen(
+    onLoginSuccess: () -> Unit
+) {
+    val context = LocalContext.current
+    val app = context.applicationContext as OTPRelayApp
+    val scope = rememberCoroutineScope()
+
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(modifier = Modifier.height(60.dp))
+
+        // Header
+        Text(
+            text = "Sign In",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "Enter your credentials to continue",
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // Error message
+        error?.let { err ->
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = err,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // Email field
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email") },
+            leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            singleLine = true
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Password field
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Password") },
+            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+            trailingIcon = {
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(
+                        if (passwordVisible) Icons.Default.VisibilityOff
+                        else Icons.Default.Visibility,
+                        contentDescription = "Toggle password"
+                    )
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            visualTransformation = if (passwordVisible) VisualTransformation.None
+            else PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            singleLine = true
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Login button
+        Button(
+            onClick = {
+                if (email.isBlank() || password.isBlank()) {
+                    error = "Please enter email and password"
+                    return@Button
+                }
+
+                isLoading = true
+                error = null
+
+                scope.launch {
+                    try {
+                        val response = app.apiService.login(
+                            LoginRequest(email = email, password = password)
+                        )
+
+                        if (response.isSuccessful) {
+                            val data = response.body()!!
+
+                            // Save tokens
+                            app.preferencesManager.saveAuthTokens(
+                                data.access_token,
+                                data.refresh_token
+                            )
+
+                            // Save user info
+                            app.preferencesManager.saveUserInfo(
+                                id = data.user.id,
+                                email = data.user.email,
+                                name = data.user.full_name,
+                                role = data.user.role,
+                                orgId = data.user.organization_id
+                            )
+
+                            // Set API client token
+                            ApiClient.setAuthToken(data.access_token)
+
+                            onLoginSuccess()
+                        } else {
+                            error = "Invalid email or password"
+                        }
+                    } catch (e: Exception) {
+                        error = "Connection error: ${e.message}"
+                    } finally {
+                        isLoading = false
+                    }
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            enabled = !isLoading,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary
+            )
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            } else {
+                Text(
+                    text = "SIGN IN",
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                )
+            }
+        }
+    }
+}
