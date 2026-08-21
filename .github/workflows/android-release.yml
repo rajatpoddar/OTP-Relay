@@ -1,0 +1,84 @@
+name: Build Android APK & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v1.0.0)'
+        required: true
+
+jobs:
+  release:
+    name: Build APK & Release
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Generate Gradle Wrapper
+        working-directory: android
+        run: gradle wrapper --gradle-version 8.4
+
+      - name: Build Debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug
+
+      - name: Determine version tag
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: "OTP Relay ${{ steps.version.outputs.tag }}"
+          body: |
+            ## OTP Relay ${{ steps.version.outputs.tag }}
+            
+            ### 📱 Android App
+            
+            **Download:** `otp-relay-debug.apk`
+            
+            ### Installation
+            1. Download the APK file
+            2. Open on Android device
+            3. Allow "Install from Unknown Sources" if prompted
+            4. Login with your credentials
+            
+            ### Default Credentials
+            | Role | Email | Password |
+            |------|-------|----------|
+            | Super Admin | admin@otp-relay.gov.in | admin123 |
+            | Office Admin | office.admin@palojori.gov.in | admin123 |
+            | Operator | amit.kumar@palojori.gov.in | operator123 |
+            | Staff | rajesh.kumar@palojori.gov.in | staff123 |
+            
+            ### Features
+            - SMS OTP detection for authorized sender IDs only
+            - Offline queue with automatic sync via WorkManager
+            - Material 3 UI matching the web dashboard
+            - Real-time OTP routing to operators
+          files: android/app/build/outputs/apk/debug/app-debug.apk
+          draft: false
+          prerelease: false
