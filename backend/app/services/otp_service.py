@@ -194,9 +194,9 @@ class OTPService:
             except re.error:
                 pass
         else:
-            # Default purpose extraction
+            # Default purpose extraction — skip optional service name (uppercase word)
             purpose_match = re.search(
-                r'(?:for|For)\s+(.+?)(?:\s+for|\s+is|\.|\s+Do\s+not)',
+                r'(?:for|For)\s+(?:[A-Z][A-Z0-9_]+\s+)?(.+?)(?:\s+for|\s+is|\.|\s+Do\s+not)',
                 message, re.IGNORECASE
             )
             if purpose_match:

@@ -1,30 +1,24 @@
 """Pytest fixtures for OTP Relay tests."""
 import pytest
-import asyncio
-from typing import AsyncGenerator
 from httpx import AsyncClient, ASGITransport
-
-from app.main import app
-
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create an instance of the default event loop for the test session."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
 
 
 @pytest.fixture
-async def client() -> AsyncGenerator[AsyncClient, None]:
-    """Create an async test client."""
+async def client():
+    """Create an async test client with fresh DB session per test."""
+    from app.core.database import engine
+
+    # Dispose existing pool connections so they don't cross event loops
+    await engine.dispose()
+
+    from app.main import app
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
 
 
 @pytest.fixture
-async def super_admin_token(client: AsyncClient) -> str:
+async def super_admin_token(client):
     """Get super admin authentication token."""
     response = await client.post(
         "/api/auth/login",
@@ -35,7 +29,7 @@ async def super_admin_token(client: AsyncClient) -> str:
 
 
 @pytest.fixture
-async def office_admin_token(client: AsyncClient) -> str:
+async def office_admin_token(client):
     """Get office admin authentication token."""
     response = await client.post(
         "/api/auth/login",
@@ -46,7 +40,7 @@ async def office_admin_token(client: AsyncClient) -> str:
 
 
 @pytest.fixture
-async def operator_token(client: AsyncClient) -> str:
+async def operator_token(client):
     """Get operator authentication token."""
     response = await client.post(
         "/api/auth/login",
@@ -57,7 +51,7 @@ async def operator_token(client: AsyncClient) -> str:
 
 
 @pytest.fixture
-async def staff_token(client: AsyncClient) -> str:
+async def staff_token(client):
     """Get staff authentication token."""
     response = await client.post(
         "/api/auth/login",

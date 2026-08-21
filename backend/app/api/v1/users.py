@@ -35,6 +35,7 @@ async def list_all_users(
 @router.post("/admin/staff", response_model=StaffResponse)
 async def create_staff(
     request: StaffCreate,
+    current_user=Depends(require_office_admin),
     tenant: TenantContextResult = Depends(get_tenant_context),
 ):
     # Create user with STAFF role
@@ -66,6 +67,7 @@ async def create_staff(
 async def list_staff(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
+    current_user=Depends(require_office_admin),
     tenant: TenantContextResult = Depends(get_tenant_context),
 ):
     query = select(Staff).where(Staff.organization_id == tenant.organization_id).offset(skip).limit(limit)
