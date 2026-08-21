@@ -28,12 +28,37 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-
-      - name: Generate Gradle Wrapper
+      - name: Download Gradle Wrapper JAR
         working-directory: android
-        run: gradle wrapper --gradle-version 8.4
+        run: |
+          mkdir -p gradle/wrapper
+          curl -L -o gradle/wrapper/gradle-wrapper.jar \
+            https://raw.githubusercontent.com/gradle/gradle/v8.4.0/gradle/wrapper/gradle-wrapper.jar
+
+      - name: Create gradle-wrapper.properties
+        working-directory: android
+        run: |
+          cat > gradle/wrapper/gradle-wrapper.properties << 'EOF'
+          distributionBase=GRADLE_USER_HOME
+          distributionPath=wrapper/dists
+          distributionUrl=https\://services.gradle.org/distributions/gradle-8.4-bin.zip
+          networkTimeout=10000
+          validateDistributionUrl=true
+          zipStoreBase=GRADLE_USER_HOME
+          zipStorePath=wrapper/dists
+          EOF
+
+      - name: Create gradlew script
+        working-directory: android
+        run: |
+          cat > gradlew << 'GRADLEW'
+          #!/bin/sh
+          APP_HOME=$( cd "${0%/[!/]*}" > /dev/null && pwd -P ) || exit
+          CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
+          JAVACMD=${JAVA_HOME:+$JAVA_HOME/bin/}java
+          exec "$JAVACMD" -Xmx256m -Dorg.gradle.appname=gradlew -classpath "$CLASSPATH" org.gradle.wrapper.GradleWrapperMain "$@"
+          GRADLEW
+          chmod +x gradlew
 
       - name: Build Debug APK
         working-directory: android
@@ -55,17 +80,17 @@ jobs:
           name: "OTP Relay ${{ steps.version.outputs.tag }}"
           body: |
             ## OTP Relay ${{ steps.version.outputs.tag }}
-            
+
             ### 📱 Android App
-            
+
             **Download:** `otp-relay-debug.apk`
-            
+
             ### Installation
             1. Download the APK file
             2. Open on Android device
             3. Allow "Install from Unknown Sources" if prompted
             4. Login with your credentials
-            
+
             ### Default Credentials
             | Role | Email | Password |
             |------|-------|----------|
@@ -73,7 +98,7 @@ jobs:
             | Office Admin | office.admin@palojori.gov.in | admin123 |
             | Operator | amit.kumar@palojori.gov.in | operator123 |
             | Staff | rajesh.kumar@palojori.gov.in | staff123 |
-            
+
             ### Features
             - SMS OTP detection for authorized sender IDs only
             - Offline queue with automatic sync via WorkManager
