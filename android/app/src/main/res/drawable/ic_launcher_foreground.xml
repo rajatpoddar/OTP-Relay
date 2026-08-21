@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Navy background circle -->
+    <path
+        android:fillColor="#0F172A"
+        android:pathData="M54,54m-40,0a40,40 0,1 1,80 0a40,40 0,1 1,-80 0" />
+    <!-- OTP text -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M30,42 L30,66 L36,66 L36,56 L44,56 L44,50 L36,50 L36,42 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M48,42 L48,66 L54,66 L54,42 Z" />
+    <path
+        android:fillColor="#4648D4"
+        android:pathData="M60,42 L60,66 L72,66 L72,60 L66,60 L66,42 Z" />
+    <!-- Arrow icon -->
+    <path
+        android:fillColor="#4648D4"
+        android:pathData="M76,50 L84,54 L76,58 Z" />
+</vector>
