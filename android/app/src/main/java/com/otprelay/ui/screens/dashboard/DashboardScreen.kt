@@ -167,6 +167,7 @@ fun DashboardScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ActionCard(
     modifier: Modifier = Modifier,
