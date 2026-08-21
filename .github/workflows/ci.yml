@@ -126,28 +126,5 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # Deploy (only on main branch)
-  deploy:
-    name: Deploy
-    runs-on: ubuntu-latest
-    needs: [backend-test, frontend-test, docker-build]
-    if: github.ref == 'refs/heads/main'
-    environment: production
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy to server
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          script: |
-            cd /opt/otp-relay
-            git pull origin main
-            docker-compose -f docker-compose.prod.yml down
-            docker-compose -f docker-compose.prod.yml up -d --build
-            docker-compose -f docker-compose.prod.yml exec backend python migrate.py
-            echo "Deployment complete!"
+  # Deploy is done manually via deploy-nas.sh on the NAS server
+  # (GitHub Actions cannot reach local network 192.168.x.x)
