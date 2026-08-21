@@ -79,6 +79,9 @@ interface AuthorizedSenderDao {
     @Query("UPDATE authorized_senders SET isAuthorized = :authorized WHERE senderId = :senderId")
     suspend fun updateAuthorization(senderId: String, authorized: Boolean)
 
+    @Query("SELECT * FROM authorized_senders WHERE isAuthorized = 1")
+    suspend fun getAllSendersSync(): List<AuthorizedSender>
+
     @Query("DELETE FROM authorized_senders")
     suspend fun deleteAll()
 }

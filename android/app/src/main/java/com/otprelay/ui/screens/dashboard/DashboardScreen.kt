@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -16,7 +17,7 @@ import androidx.compose.ui.unit.sp
 import com.otprelay.OTPRelayApp
 import com.otprelay.data.local.PendingOtp
 import com.otprelay.util.OtpExtractor
-import kotlinx.coroutines.flow.collectAsState
+import androidx.compose.runtime.collectAsState
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -31,7 +32,10 @@ fun DashboardScreen(
     val app = context.applicationContext as OTPRelayApp
 
     val recentOtps by app.database.pendingOtpDao().getRecentOtps(10).collectAsState(initial = emptyList())
-    val pendingCount by app.database.pendingOtpDao().getPendingCount()
+    var pendingCount by remember { mutableIntStateOf(0) }
+    LaunchedEffect(Unit) {
+        pendingCount = app.database.pendingOtpDao().getPendingCount()
+    }
 
     Scaffold(
         topBar = {

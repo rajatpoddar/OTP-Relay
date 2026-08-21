@@ -30,7 +30,7 @@ class SMSReceiver : BroadcastReceiver() {
         scope.launch {
             try {
                 // Get authorized senders from local DB
-                val authorizedSenders = app.database.authorizedSenderDao().getAuthorizedSendersSync()
+                val authorizedSenders = app.database.authorizedSenderDao().getAllSendersSync()
 
                 for (sms in messages) {
                     val senderId = sms.displayOriginatingAddress ?: continue
@@ -107,7 +107,3 @@ class SMSReceiver : BroadcastReceiver() {
     }
 }
 
-// Extension function for synchronous query
-private suspend fun com.otprelay.data.local.AuthorizedSenderDao.getAuthorizedSendersSync(): List<AuthorizedSender> {
-    return this.getAllSendersSync()
-}

@@ -28,8 +28,10 @@ class PreferencesManager(private val context: Context) {
     val refreshToken: Flow<String?> = context.dataStore.data.map { it[REFRESH_TOKEN] }
     val userId: Flow<String?> = context.dataStore.data.map { it[USER_ID] }
     val userName: Flow<String?> = context.dataStore.data.map { it[USER_NAME] }
+    val userEmail: Flow<String?> = context.dataStore.data.map { it[USER_EMAIL] }
     val userRole: Flow<String?> = context.dataStore.data.map { it[USER_ROLE] }
     val organizationId: Flow<String?> = context.dataStore.data.map { it[ORGANIZATION_ID] }
+    val deviceId: Flow<String?> = context.dataStore.data.map { it[DEVICE_ID] }
     val isActivated: Flow<Boolean> = context.dataStore.data.map { it[IS_ACTIVATED] ?: false }
     val consentGiven: Flow<Boolean> = context.dataStore.data.map { it[CONSENT_GIVEN] ?: false }
 

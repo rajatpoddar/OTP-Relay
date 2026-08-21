@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.sp
 import com.otprelay.OTPRelayApp
 import com.otprelay.data.local.PendingOtp
 import com.otprelay.util.OtpExtractor
-import kotlinx.coroutines.flow.collectAsState
+import androidx.compose.runtime.collectAsState
 import java.text.SimpleDateFormat
 import java.util.*
 
