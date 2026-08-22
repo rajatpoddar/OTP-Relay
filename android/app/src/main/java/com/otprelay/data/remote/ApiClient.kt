@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit
 
 object ApiClient {
 
-    private var BASE_URL = "http://192.168.29.101:8061/"
+    private var BASE_URL = "https://otp.nregabot.com/"
 
     fun setBaseUrl(url: String) {
         BASE_URL = url
