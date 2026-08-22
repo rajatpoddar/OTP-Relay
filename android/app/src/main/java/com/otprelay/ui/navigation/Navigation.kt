@@ -36,6 +36,11 @@ fun OTPRelayNavGraph(
                     navController.navigate(Screen.Login.route) {
                         popUpTo(Screen.Welcome.route) { inclusive = true }
                     }
+                },
+                onNavigateToDashboard = {
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(Screen.Welcome.route) { inclusive = true }
+                    }
                 }
             )
         }

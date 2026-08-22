@@ -13,52 +13,24 @@ import com.otprelay.ui.navigation.OTPRelayNavGraph
 import com.otprelay.ui.navigation.Screen
 import com.otprelay.ui.theme.OTPRelayTheme
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Determine startup destination based on auth state
-        val startRoute = determineStartRoute()
-
+        // ALWAYS start at Welcome - no runBlocking on main thread
+        // The auth check happens inside the Compose tree via LaunchedEffect
         setContent {
             OTPRelayTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    OTPRelayNavGraph(startDestination = startRoute)
+                    OTPRelayNavGraph(startDestination = Screen.Welcome.route)
                 }
             }
-        }
-    }
-
-    private fun determineStartRoute(): String {
-        return try {
-            val app = applicationContext as OTPRelayApp
-            val prefs = app.preferencesManager
-
-            // Read preferences synchronously for startup
-            val isActivated = runBlocking { prefs.isActivated.first() }
-            val hasToken = runBlocking { prefs.accessToken.first() }
-            val userId = runBlocking { prefs.userId.first() }
-
-            when {
-                // Not activated or no token → Welcome/Login
-                !isActivated || hasToken == null || userId == null -> {
-                    Log.d(TAG, "Startup: No auth state, showing Welcome")
-                    Screen.Welcome.route
-                }
-                // Has valid auth state → Dashboard
-                else -> {
-                    Log.d(TAG, "Startup: Auth state found, routing to Dashboard")
-                    Screen.Dashboard.route
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error determining start route, defaulting to Welcome", e)
-            Screen.Welcome.route
         }
     }
 

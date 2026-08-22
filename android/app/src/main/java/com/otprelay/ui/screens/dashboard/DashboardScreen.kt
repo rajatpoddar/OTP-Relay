@@ -1,6 +1,7 @@
 package com.otprelay.ui.screens.dashboard
 
 import android.util.Log
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,11 +19,10 @@ import androidx.compose.ui.unit.sp
 import com.otprelay.OTPRelayApp
 import com.otprelay.data.local.PendingOtp
 import com.otprelay.util.OtpExtractor
-import androidx.compose.runtime.collectAsState
+import kotlinx.coroutines.flow.flowOf
 import java.text.SimpleDateFormat
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     onNavigateToActivity: () -> Unit,
@@ -38,7 +38,7 @@ fun DashboardScreen(
             app.database.pendingOtpDao().getRecentOtps(10)
         } catch (e: Exception) {
             Log.e("DashboardScreen", "Failed to access database", e)
-            kotlinx.coroutines.flow.flowOf(emptyList())
+            flowOf(emptyList())
         }
     }.collectAsState(initial = emptyList())
 
@@ -187,7 +187,10 @@ fun DashboardScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * ActionCard uses stable Card + clickable modifier instead of experimental
+ * Card(onClick=...) to avoid ExperimentalMaterial3Api crash on some devices.
+ */
 @Composable
 fun ActionCard(
     modifier: Modifier = Modifier,
@@ -196,8 +199,7 @@ fun ActionCard(
     onClick: () -> Unit
 ) {
     Card(
-        onClick = onClick,
-        modifier = modifier
+        modifier = modifier.clickable { onClick() }
     ) {
         Column(
             modifier = Modifier

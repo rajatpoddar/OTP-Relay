@@ -1,5 +1,6 @@
 package com.otprelay.ui.screens.login
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -21,7 +22,6 @@ import androidx.compose.ui.unit.sp
 import com.otprelay.OTPRelayApp
 import com.otprelay.data.remote.ApiClient
 import com.otprelay.data.model.LoginRequest
-import com.otprelay.util.PreferencesManager
 import kotlinx.coroutines.launch
 
 @Composable
@@ -161,7 +161,8 @@ fun LoginScreen(
                             error = "Invalid email or password"
                         }
                     } catch (e: Exception) {
-                        error = "Connection error: ${e.message}"
+                        Log.e("LoginScreen", "Login failed", e)
+                        error = "Connection error: ${e.message ?: "Unable to reach server"}"
                     } finally {
                         isLoading = false
                     }
