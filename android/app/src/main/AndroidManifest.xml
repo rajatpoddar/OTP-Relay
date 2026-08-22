@@ -39,18 +39,6 @@
             </intent-filter>
         </receiver>
 
-        <!-- WorkManager: Our Application class implements Configuration.Provider,
-             so we remove the default auto-init and let the app control it -->
-        <provider
-            android:name="androidx.start.InitializationProvider"
-            android:authorities="${applicationId}.androidx-start"
-            android:exported="false"
-            tools:node="merge">
-            <meta-data
-                android:name="androidx.work.WorkManagerInitializer"
-                android:value="androidx.start"
-                tools:node="remove" />
-        </provider>
 
     </application>
 
