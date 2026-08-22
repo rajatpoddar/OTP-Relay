@@ -24,7 +24,7 @@ class OtpMessage(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False, index=True)
-    staff_id = Column(UUID(as_uuid=True), ForeignKey("staff.id"), nullable=False, index=True)
+    staff_id = Column(UUID(as_uuid=True), ForeignKey("staff.id"), nullable=True, index=True)
     device_id = Column(UUID(as_uuid=True), ForeignKey("devices.id"), nullable=True, index=True)
     sender_id = Column(UUID(as_uuid=True), ForeignKey("sender_ids.id"), nullable=True, index=True)
     sender_text = Column(String(50), nullable=False)

@@ -84,7 +84,7 @@ class OTPService:
 
         otp = OtpMessage(
             organization_id=organization_id,
-            staff_id=staff_id or uuid.uuid4(),
+            staff_id=staff_id,
             device_id=device_id,
             sender_id=sender.id if sender else None,
             sender_text=sender_text,

@@ -8,7 +8,7 @@ from sqlalchemy import select, desc
 from app.core.database import get_db
 from app.core.dependencies import get_tenant_context, TenantContextResult, require_operator
 from app.models.otp import OtpMessage, OtpStatus, OtpDeliveryEvent, OperatorNote
-from app.models.staff_operator import Operator
+from app.models.staff_operator import Operator, Staff
 from app.schemas.otp import (
     OtpSubmitRequest, OtpResponse, OtpMarkUsedRequest, OtpNoteRequest, OtpNoteResponse,
 )
@@ -29,12 +29,26 @@ async def submit_otp(
     tenant: TenantContextResult = Depends(get_tenant_context),
 ):
     """Submit OTP from Android device."""
+    # Resolve staff_id from authenticated user
+    staff_id = None
+    if tenant.organization_id:
+        result = await tenant.db.execute(
+            select(Staff).where(
+                Staff.user_id == tenant.user_id,
+                Staff.organization_id == tenant.organization_id,
+            )
+        )
+        staff = result.scalar_one_or_none()
+        if staff:
+            staff_id = staff.id
+
     from app.services.otp_service import OTPService
     service = OTPService(tenant.db)
     otp = await service.process_otp(
         organization_id=tenant.organization_id,
         message=request.message,
         sender_text=request.sender_id_text,
+        staff_id=staff_id,
     )
     return OtpResponse(
         id=otp.id,
