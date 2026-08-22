@@ -4,6 +4,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Optional, Tuple, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc, and_
+from sqlalchemy.orm import joinedload
 
 from app.models.otp import OtpMessage, OtpStatus, OtpDeliveryEvent
 from app.models.device_service import SenderId
@@ -130,13 +131,15 @@ class OTPService:
 
     async def _find_sender(self, organization_id: uuid.UUID, sender_text: str) -> Optional[SenderId]:
         result = await self.db.execute(
-            select(SenderId).where(
+            select(SenderId)
+            .options(joinedload(SenderId.department))
+            .where(
                 SenderId.organization_id == organization_id,
                 SenderId.sender_id == sender_text,
                 SenderId.is_active == True,
             )
         )
-        return result.scalar_one_or_none()
+        return result.unique().scalar_one_or_none()
 
     async def _check_authorization(self, staff_id: uuid.UUID, sender_id: uuid.UUID) -> bool:
         result = await self.db.execute(
