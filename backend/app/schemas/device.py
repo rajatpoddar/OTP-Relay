@@ -38,6 +38,32 @@ class DeviceResponse(BaseModel):
         from_attributes = True
 
 
+class AdminDeviceResponse(BaseModel):
+    """Extended device response for Office Admin device management."""
+    id: UUID
+    device_id: str
+    staff_id: UUID
+    staff_name: Optional[str] = None
+    staff_mobile: Optional[str] = None
+    organization_id: UUID
+    model: Optional[str] = None
+    manufacturer: Optional[str] = None
+    android_version: Optional[str] = None
+    app_version: Optional[str] = None
+    status: str
+    registered_at: datetime
+    last_seen_at: Optional[datetime] = None
+    last_sync_at: Optional[datetime] = None
+    revoked_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class DeviceRevokeRequest(BaseModel):
+    reason: Optional[str] = None
+
+
 class SubscriptionPlanCreate(BaseModel):
     name: str
     description: Optional[str] = None

@@ -23,11 +23,12 @@ sealed class Screen(val route: String) {
 
 @Composable
 fun OTPRelayNavGraph(
+    startDestination: String = Screen.Welcome.route,
     navController: NavHostController = rememberNavController()
 ) {
     NavHost(
         navController = navController,
-        startDestination = Screen.Welcome.route
+        startDestination = startDestination
     ) {
         composable(Screen.Welcome.route) {
             WelcomeScreen(

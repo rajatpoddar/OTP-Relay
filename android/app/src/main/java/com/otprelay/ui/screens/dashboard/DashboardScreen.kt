@@ -1,5 +1,6 @@
 package com.otprelay.ui.screens.dashboard
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -31,10 +32,23 @@ fun DashboardScreen(
     val context = LocalContext.current
     val app = context.applicationContext as OTPRelayApp
 
-    val recentOtps by app.database.pendingOtpDao().getRecentOtps(10).collectAsState(initial = emptyList())
+    // Safe database access with error handling
+    val recentOtps by remember {
+        try {
+            app.database.pendingOtpDao().getRecentOtps(10)
+        } catch (e: Exception) {
+            Log.e("DashboardScreen", "Failed to access database", e)
+            kotlinx.coroutines.flow.flowOf(emptyList())
+        }
+    }.collectAsState(initial = emptyList())
+
     var pendingCount by remember { mutableIntStateOf(0) }
     LaunchedEffect(Unit) {
-        pendingCount = app.database.pendingOtpDao().getPendingCount()
+        try {
+            pendingCount = app.database.pendingOtpDao().getPendingCount()
+        } catch (e: Exception) {
+            Log.e("DashboardScreen", "Failed to get pending count", e)
+        }
     }
 
     Scaffold(
@@ -153,6 +167,12 @@ fun DashboardScreen(
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = "No OTPs yet",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "OTP messages will appear here when received",
+                                fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }

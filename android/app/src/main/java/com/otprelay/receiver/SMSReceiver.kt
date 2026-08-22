@@ -1,12 +1,12 @@
 package com.otprelay.receiver
 
+import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
 import android.util.Log
 import com.otprelay.OTPRelayApp
-import com.otprelay.data.local.AuthorizedSender
 import com.otprelay.data.local.PendingOtp
 import com.otprelay.util.OtpExtractor
 import kotlinx.coroutines.CoroutineScope
@@ -22,15 +22,35 @@ class SMSReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Telephony.Sms.Intents.SMS_RECEIVED_ACTION) return
 
-        val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
+        val messages = try {
+            Telephony.Sms.Intents.getMessagesFromIntent(intent)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to parse SMS intent", e)
+            return
+        }
 
-        val app = context.applicationContext as OTPRelayApp
-        val scope = CoroutineScope(Dispatchers.IO)
+        val app = try {
+            context.applicationContext as? OTPRelayApp
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to get application context", e)
+            return
+        } ?: return
 
-        scope.launch {
+        val pendingResult = goAsync()
+
+        CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Get authorized senders from local DB
-                val authorizedSenders = app.database.authorizedSenderDao().getAllSendersSync()
+                val authorizedSenders = try {
+                    app.database.authorizedSenderDao().getAllSendersSync()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to query authorized senders", e)
+                    emptyList()
+                }
+
+                if (authorizedSenders.isEmpty()) {
+                    Log.d(TAG, "No authorized senders configured, ignoring SMS")
+                    return@launch
+                }
 
                 for (sms in messages) {
                     val senderId = sms.displayOriginatingAddress ?: continue
@@ -38,7 +58,6 @@ class SMSReceiver : BroadcastReceiver() {
 
                     Log.d(TAG, "SMS received from: $senderId")
 
-                    // Check if sender is authorized
                     val authorizedSender = OtpExtractor.findAuthorizedSender(senderId, authorizedSenders)
 
                     if (authorizedSender == null) {
@@ -48,7 +67,6 @@ class SMSReceiver : BroadcastReceiver() {
 
                     Log.d(TAG, "Authorized sender detected: $senderId")
 
-                    // Extract OTP
                     val extracted = OtpExtractor.extractOtp(messageBody, authorizedSender)
 
                     if (extracted.otpValue == null) {
@@ -56,13 +74,11 @@ class SMSReceiver : BroadcastReceiver() {
                         continue
                     }
 
-                    // Validate OTP length
                     if (!OtpExtractor.validateOtpLength(extracted.otpValue, authorizedSender.otpLength)) {
                         Log.w(TAG, "OTP length mismatch: expected ${authorizedSender.otpLength}, got ${extracted.otpValue.length}")
                         continue
                     }
 
-                    // Store in local queue
                     val pendingOtp = PendingOtp(
                         senderId = senderId,
                         message = messageBody,
@@ -71,39 +87,44 @@ class SMSReceiver : BroadcastReceiver() {
                         syncStatus = "PENDING"
                     )
 
-                    app.database.pendingOtpDao().insertOtp(pendingOtp)
+                    try {
+                        app.database.pendingOtpDao().insertOtp(pendingOtp)
+                        Log.d(TAG, "OTP queued for sync: ${extracted.otpValue.take(2)}••${extracted.otpValue.takeLast(2)}")
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to insert OTP to database", e)
+                    }
 
-                    Log.d(TAG, "OTP queued for sync: ${extracted.otpValue.take(2)}••${extracted.otpValue.takeLast(2)}")
-
-                    // Show notification
                     showNotification(context, senderId, extracted.otpValue, extracted.purpose)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error processing SMS", e)
+            } finally {
+                pendingResult.finish()
             }
         }
     }
 
     private fun showNotification(context: Context, senderId: String, otp: String, purpose: String?) {
-        val app = context.applicationContext as OTPRelayApp
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+        try {
+            val maskedOtp = OtpExtractor.maskOtp(otp)
+            val title = "New OTP from $senderId"
+            val text = buildString {
+                append("OTP: $maskedOtp")
+                purpose?.let { append("\nPurpose: $it") }
+            }
 
-        val maskedOtp = OtpExtractor.maskOtp(otp)
-        val title = "New OTP from $senderId"
-        val text = buildString {
-            append("OTP: $maskedOtp")
-            purpose?.let { append("\nPurpose: $it") }
+            val notification = android.app.Notification.Builder(context, OTPRelayApp.CHANNEL_ID)
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setContentTitle(title)
+                .setContentText(text)
+                .setPriority(android.app.Notification.PRIORITY_HIGH)
+                .setAutoCancel(true)
+                .build()
+
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.notify(System.currentTimeMillis().toInt(), notification)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to show notification", e)
         }
-
-        val notification = android.app.Notification.Builder(context, OTPRelayApp.CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle(title)
-            .setContentText(text)
-            .setPriority(android.app.Notification.PRIORITY_HIGH)
-            .setAutoCancel(true)
-            .build()
-
-        notificationManager.notify(System.currentTimeMillis().toInt(), notification)
     }
 }
-

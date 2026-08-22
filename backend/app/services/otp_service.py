@@ -1,14 +1,14 @@
 import re
 import uuid
 from datetime import datetime, timezone, timedelta
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc, and_
 
 from app.models.otp import OtpMessage, OtpStatus, OtpDeliveryEvent
 from app.models.device_service import SenderId
 from app.models.routing import RoutingRule, StaffSenderAuthorization, AuthStatus
-from app.models.staff_operator import Operator, Staff
+from app.models.staff_operator import Operator, Staff, StaffOperatorOtpPreference
 from app.models.audit import AuditLog
 
 
@@ -17,7 +17,17 @@ PRIORITY_ORDER = {"critical": 0, "high": 1, "normal": 2, "low": 3}
 
 
 class OTPService:
-    """Enhanced OTP processing pipeline and routing engine."""
+    """Enhanced OTP processing pipeline and routing engine.
+
+    Routing precedence:
+    1. Device authorization
+    2. Staff sender authorization
+    3. Routing rule match
+    4. Staff → Operator sharing preference  <-- NEW
+    5. Operator active/enabled status
+    6. Subscription/organization eligibility
+    7. Deliver to operator
+    """
 
     def __init__(self, db: AsyncSession):
         self.db = db
@@ -36,7 +46,7 @@ class OTPService:
         2. Authorization Validation
         3. OTP Extraction (configurable per sender)
         4. Duplicate Detection
-        5. Routing
+        5. Routing (with staff→operator preference check)
         6. Database + Audit
         """
 
@@ -58,7 +68,6 @@ class OTPService:
         # Step 3b: OTP length validation
         if otp_value and sender and sender.otp_length:
             if len(otp_value) != sender.otp_length:
-                # Try to extract again with correct length
                 otp_value = self._extract_otp_by_length(message, sender.otp_length)
 
         # Step 4: Duplicate Detection
@@ -70,7 +79,6 @@ class OTPService:
         # Step 5: Create OTP record with expiry
         expiry_minutes = 10  # Default
         if sender and sender.message_template:
-            # Could parse expiry from template config
             pass
 
         otp = OtpMessage(
@@ -91,38 +99,25 @@ class OTPService:
         self.db.add(otp)
         await self.db.flush()
 
-        # Step 6: Routing
+        # Step 6: Routing (with staff→operator preference enforcement)
         if otp_value:
-            operator = await self._route_otp(organization_id, sender, staff_id)
-            if operator:
+            delivery_result = await self._route_otp_with_preferences(
+                organization_id, sender, staff_id, otp.id
+            )
+            if delivery_result == "delivered":
                 otp.status = OtpStatus.DELIVERED
                 otp.routed_at = datetime.now(timezone.utc)
                 otp.delivered_at = datetime.now(timezone.utc)
                 self.db.add(otp)
                 await self.db.flush()
-
-                event = OtpDeliveryEvent(
-                    otp_id=otp.id,
-                    operator_id=operator.id,
-                    event_type="delivered",
-                )
-                self.db.add(event)
-                await self.db.flush()
-
-                # Audit log
-                await self._create_audit_log(
-                    organization_id=organization_id,
-                    action="otp_delivered",
-                    entity_type="otp_message",
-                    entity_id=otp.id,
-                    details=f"OTP delivered to operator {operator.full_name}",
-                )
+            elif delivery_result == "blocked":
+                # OTP record stays with status=RECEIVED; blocked event logged below
+                pass
             else:
                 otp.status = OtpStatus.UNASSIGNED
                 self.db.add(otp)
                 await self.db.flush()
 
-                # Audit log for unassigned
                 await self._create_audit_log(
                     organization_id=organization_id,
                     action="otp_unassigned",
@@ -134,7 +129,6 @@ class OTPService:
         return otp
 
     async def _find_sender(self, organization_id: uuid.UUID, sender_text: str) -> Optional[SenderId]:
-        """Find matching sender ID configuration."""
         result = await self.db.execute(
             select(SenderId).where(
                 SenderId.organization_id == organization_id,
@@ -145,7 +139,6 @@ class OTPService:
         return result.scalar_one_or_none()
 
     async def _check_authorization(self, staff_id: uuid.UUID, sender_id: uuid.UUID) -> bool:
-        """Check if staff has authorized this sender."""
         result = await self.db.execute(
             select(StaffSenderAuthorization).where(
                 StaffSenderAuthorization.staff_id == staff_id,
@@ -156,12 +149,10 @@ class OTPService:
         return result.scalar_one_or_none() is not None
 
     def _extract_otp_enhanced(self, message: str, sender: Optional[SenderId]) -> Tuple[Optional[str], Optional[str], Optional[str]]:
-        """Enhanced OTP extraction with configurable regex per sender."""
         otp_value = None
         purpose = None
         reference = None
 
-        # Try sender-specific extraction first
         if sender and sender.extraction_regex:
             try:
                 match = re.search(sender.extraction_regex, message, re.IGNORECASE)
@@ -170,7 +161,6 @@ class OTPService:
             except re.error:
                 pass
 
-        # Fallback: common OTP patterns
         if not otp_value:
             patterns = [
                 r'(?:OTP|otp|Otp)[:\s]*(\d{4,8})',
@@ -185,7 +175,6 @@ class OTPService:
                     otp_value = match.group(1)
                     break
 
-        # Extract purpose with configurable regex
         if sender and sender.purpose_regex:
             try:
                 match = re.search(sender.purpose_regex, message, re.IGNORECASE)
@@ -194,7 +183,6 @@ class OTPService:
             except re.error:
                 pass
         else:
-            # Default purpose extraction — skip optional service name (uppercase word)
             purpose_match = re.search(
                 r'(?:for|For)\s+(?:[A-Z][A-Z0-9_]+\s+)?(.+?)(?:\s+for|\s+is|\.|\s+Do\s+not)',
                 message, re.IGNORECASE
@@ -202,7 +190,6 @@ class OTPService:
             if purpose_match:
                 purpose = purpose_match.group(1).strip()
 
-        # Extract reference with configurable regex
         if sender and sender.reference_regex:
             try:
                 match = re.search(sender.reference_regex, message, re.IGNORECASE)
@@ -211,7 +198,6 @@ class OTPService:
             except re.error:
                 pass
         else:
-            # Default reference extraction
             ref_match = re.search(
                 r'(?:Reference|reference|Ref|ref)\s+(?:No\.?|number)?\s*[:\s]*(\S+)',
                 message, re.IGNORECASE
@@ -222,7 +208,6 @@ class OTPService:
         return otp_value, purpose, reference
 
     def _extract_otp_by_length(self, message: str, length: int) -> Optional[str]:
-        """Extract OTP of specific length."""
         pattern = rf'\b(\d{{{length}}})\b'
         match = re.search(pattern, message)
         return match.group(1) if match else None
@@ -231,7 +216,6 @@ class OTPService:
         self, organization_id: uuid.UUID, staff_id: uuid.UUID,
         otp_value: str, sender_text: str
     ) -> Optional[OtpMessage]:
-        """Check for duplicate OTP within last 5 minutes."""
         five_min_ago = datetime.now(timezone.utc) - timedelta(minutes=5)
         result = await self.db.execute(
             select(OtpMessage).where(
@@ -244,21 +228,69 @@ class OTPService:
         )
         return result.scalar_one_or_none()
 
-    async def _route_otp(
-        self, organization_id: uuid.UUID,
-        sender: Optional[SenderId], staff_id: Optional[uuid.UUID]
-    ) -> Optional[Operator]:
-        """
-        Priority-based routing engine:
-        1. Staff + Sender → Operator (highest priority)
-        2. Sender → Operator
-        3. Service → Operator
-        4. Staff → Operator
-        5. Default catch-all → Operator (lowest priority)
+    async def _route_otp_with_preferences(
+        self,
+        organization_id: uuid.UUID,
+        sender: Optional[SenderId],
+        staff_id: Optional[uuid.UUID],
+        otp_id: uuid.UUID,
+    ) -> str:
+        """Route OTP with staff→operator preference enforcement.
+
+        Returns: "delivered", "blocked", or "unassigned"
         """
         now = datetime.now(timezone.utc)
 
-        # Build routing candidates
+        # Get all candidate operators from routing rules
+        candidates = await self._get_routing_candidates(organization_id, sender, staff_id, now)
+
+        if not candidates:
+            return "unassigned"
+
+        # Check staff→operator preferences
+        for priority_val, rule, operator in candidates:
+            allowed = await self._check_staff_operator_preference(staff_id, operator.id, organization_id)
+
+            if allowed:
+                # Deliver to this operator
+                event = OtpDeliveryEvent(
+                    otp_id=otp_id,
+                    operator_id=operator.id,
+                    event_type="delivered",
+                )
+                self.db.add(event)
+                await self.db.flush()
+
+                await self._create_audit_log(
+                    organization_id=organization_id,
+                    action="otp_delivered",
+                    entity_type="otp_message",
+                    entity_id=otp_id,
+                    details=f"OTP delivered to operator {operator.full_name}",
+                )
+                return "delivered"
+            else:
+                # This operator is blocked by staff preference
+                await self._create_audit_log(
+                    organization_id=organization_id,
+                    action="DELIVERY_BLOCKED_BY_STAFF_PREFERENCE",
+                    entity_type="otp_message",
+                    entity_id=otp_id,
+                    details=f"OTP blocked: staff preference disables routing to operator {operator.full_name}",
+                )
+                # Continue to next candidate (fallback)
+
+        # All candidates blocked
+        return "blocked"
+
+    async def _get_routing_candidates(
+        self,
+        organization_id: uuid.UUID,
+        sender: Optional[SenderId],
+        staff_id: Optional[uuid.UUID],
+        now: datetime,
+    ) -> list:
+        """Get sorted routing candidates by priority."""
         candidates = []
 
         # Try: Staff + Sender specific rule
@@ -291,19 +323,45 @@ class OTPService:
                 if op:
                     candidates.append((PRIORITY_ORDER.get(rule.priority, 2), rule, op))
 
-        # Try: Default catch-all rule (no sender, no staff, no service)
+        # Try: Default catch-all rule
         rules = await self._get_active_rules(organization_id, now=now)
         for rule in rules:
             op = await self._get_operator(rule.operator_id)
             if op:
                 candidates.append((PRIORITY_ORDER.get(rule.priority, 2), rule, op))
 
-        # Sort by priority (lower number = higher priority)
         if candidates:
             candidates.sort(key=lambda x: x[0])
-            return candidates[0][2]
 
-        return None
+        return candidates
+
+    async def _check_staff_operator_preference(
+        self,
+        staff_id: Optional[uuid.UUID],
+        operator_id: uuid.UUID,
+        organization_id: uuid.UUID,
+    ) -> bool:
+        """Check if staff→operator OTP sharing is enabled.
+
+        Returns True if sharing is allowed (default behavior).
+        Returns False only if an explicit preference record with enabled=False exists.
+        """
+        if not staff_id:
+            return True  # No staff context = allow
+
+        result = await self.db.execute(
+            select(StaffOperatorOtpPreference).where(
+                StaffOperatorOtpPreference.staff_id == staff_id,
+                StaffOperatorOtpPreference.operator_id == operator_id,
+                StaffOperatorOtpPreference.organization_id == organization_id,
+            )
+        )
+        pref = result.scalar_one_or_none()
+
+        if pref is None:
+            return True  # No preference set = default allow
+
+        return pref.enabled
 
     async def _get_active_rules(
         self, organization_id: uuid.UUID,
@@ -312,7 +370,6 @@ class OTPService:
         staff_id: Optional[uuid.UUID] = None,
         now: datetime = None,
     ) -> list:
-        """Get active routing rules matching criteria."""
         if now is None:
             now = datetime.now(timezone.utc)
 
@@ -323,7 +380,6 @@ class OTPService:
             (RoutingRule.effective_to.is_(None) | (RoutingRule.effective_to >= now)),
         ]
 
-        # Apply specific filters
         if sender_id is not None:
             conditions.append(RoutingRule.sender_id == sender_id)
         else:
@@ -379,7 +435,6 @@ class OTPService:
         entity_type: str, entity_id: uuid.UUID, details: str,
         user_id: Optional[uuid.UUID] = None,
     ):
-        """Create an audit log entry."""
         log = AuditLog(
             organization_id=organization_id,
             user_id=user_id,
@@ -392,7 +447,6 @@ class OTPService:
         await self.db.flush()
 
     async def mark_viewed(self, otp_id: uuid.UUID, organization_id: uuid.UUID) -> Optional[OtpMessage]:
-        """Mark OTP as viewed."""
         result = await self.db.execute(
             select(OtpMessage).where(
                 OtpMessage.id == otp_id,
@@ -411,7 +465,6 @@ class OTPService:
         self, otp_id: uuid.UUID, organization_id: uuid.UUID,
         operator_id: uuid.UUID, note: str
     ) -> Optional[OtpMessage]:
-        """Mark OTP as used with mandatory note."""
         result = await self.db.execute(
             select(OtpMessage).where(
                 OtpMessage.id == otp_id,
@@ -423,14 +476,13 @@ class OTPService:
             return None
 
         if otp.status == OtpStatus.USED:
-            return otp  # Already used
+            return otp
 
         otp.status = OtpStatus.USED
         otp.used_at = datetime.now(timezone.utc)
         self.db.add(otp)
         await self.db.flush()
 
-        # Create delivery event
         event = OtpDeliveryEvent(
             otp_id=otp.id,
             operator_id=operator_id,
@@ -439,7 +491,6 @@ class OTPService:
         self.db.add(event)
         await self.db.flush()
 
-        # Audit log
         await self._create_audit_log(
             organization_id=organization_id,
             action="otp_used",
@@ -452,7 +503,6 @@ class OTPService:
         return otp
 
     async def expire_old_otps(self, organization_id: Optional[uuid.UUID] = None):
-        """Expire OTPs that have passed their expiry time."""
         now = datetime.now(timezone.utc)
         conditions = [
             OtpMessage.status.in_([OtpStatus.RECEIVED, OtpStatus.PROCESSING, OtpStatus.ROUTED, OtpStatus.DELIVERED]),
@@ -478,7 +528,6 @@ class OTPService:
         return len(otps)
 
     def get_masked_otp(self, otp_value: Optional[str], status: str) -> Optional[str]:
-        """Return masked OTP for used/expired/failed records."""
         if not otp_value:
             return None
         if status in (OtpStatus.USED.value, OtpStatus.EXPIRED.value, OtpStatus.FAILED.value):

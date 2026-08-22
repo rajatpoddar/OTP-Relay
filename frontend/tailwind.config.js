@@ -28,7 +28,7 @@ export default {
         'on-error': '#FFFFFF',
         'on-error-container': '#93000A',
         'inverse-surface': '#213145',
-        'inverse-on-surface': '#EA F1FF',
+        'inverse-on-surface': '#EAF1FF',
         'tertiary': '#000000',
         'tertiary-container': '#002113',
         'on-tertiary': '#FFFFFF',

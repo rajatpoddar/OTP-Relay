@@ -19,6 +19,7 @@ from app.api.v1.dashboard import router as dashboard_router
 from app.api.v1.audit import router as audit_router
 from app.api.v1.reports import router as reports_router
 from app.api.v1.websocket import router as ws_router
+from app.api.v1.staff_operator import router as staff_operator_router
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -54,6 +55,7 @@ app.include_router(dashboard_router)
 app.include_router(audit_router)
 app.include_router(reports_router)
 app.include_router(ws_router)
+app.include_router(staff_operator_router)
 
 
 @app.get("/")
