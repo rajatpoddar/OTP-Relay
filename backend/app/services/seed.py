@@ -82,12 +82,13 @@ async def seed():
         db.add(sub)
         await db.flush()
 
-        # Create Super Admin
+        # Create Super Admin (assigned to org so admin panel works)
         super_admin = User(
             email="admin@otp-relay.gov.in",
             full_name="Super Admin",
             hashed_password=hash_password("admin123"),
             role=UserRole.SUPER_ADMIN,
+            organization_id=org.id,
             is_active=True,
         )
         db.add(super_admin)
@@ -250,6 +251,27 @@ async def seed():
                     authorized_at=datetime.now(timezone.utc),
                 )
                 db.add(auth)
+
+        # Create activation codes for each staff member
+        for staff in staff_objects:
+            code = ActivationCode(
+                organization_id=org.id,
+                staff_id=staff.id,
+                code=f"OTP-{str(staff.id)[:8].upper()}",
+                is_used=False,
+                expires_at=datetime.now(timezone.utc) + timedelta(days=365),
+            )
+            db.add(code)
+
+        # Create DEFAULT activation code (for initial device registration)
+        default_code = ActivationCode(
+            organization_id=org.id,
+            staff_id=staff_objects[0].id,  # Assign to first staff
+            code="DEFAULT",
+            is_used=False,
+            expires_at=datetime.now(timezone.utc) + timedelta(days=365),
+        )
+        db.add(default_code)
 
         await db.commit()
         print("✅ Database seeded successfully!")

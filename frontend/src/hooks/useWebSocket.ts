@@ -26,7 +26,8 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     const token = localStorage.getItem('access_token')
     if (!token) return
 
-    const wsUrl = `ws://localhost:8000/ws?token=${token}&organization_id=${user.organization_id}`
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    const wsUrl = `${protocol}//${window.location.host}/ws?token=${token}&organization_id=${user.organization_id}`
 
     try {
       const ws = new WebSocket(wsUrl)

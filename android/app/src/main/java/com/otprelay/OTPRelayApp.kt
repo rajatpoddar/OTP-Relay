@@ -14,6 +14,8 @@ import com.otprelay.util.PreferencesManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 class OTPRelayApp : Application(), Configuration.Provider {
 
@@ -54,6 +56,20 @@ class OTPRelayApp : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
+        restoreApiToken()
+    }
+
+    private fun restoreApiToken() {
+        applicationScope.launch {
+            try {
+                preferencesManager.accessToken.first()?.let { token ->
+                    ApiClient.setAuthToken(token)
+                    Log.d(TAG, "API token restored from DataStore")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to restore API token", e)
+            }
+        }
     }
 
     private fun createNotificationChannel() {

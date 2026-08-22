@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import androidx.work.*
 import com.otprelay.OTPRelayApp
+import com.otprelay.data.model.HeartbeatRequest
 import com.otprelay.data.model.OtpEvent
 import com.otprelay.data.model.SyncRequest
 import kotlinx.coroutines.flow.first
@@ -61,6 +62,18 @@ class SyncWorker(
         val pendingOtpDao = app.database.pendingOtpDao()
 
         try {
+            // Step 1: Send heartbeat (keep device alive)
+            val deviceId = app.preferencesManager.deviceId.first()
+            if (deviceId != null) {
+                try {
+                    app.apiService.sendHeartbeat(HeartbeatRequest(device_id = deviceId))
+                    Log.d(TAG, "Heartbeat sent for device: $deviceId")
+                } catch (e: Exception) {
+                    Log.w(TAG, "Heartbeat failed (non-fatal): ${e.message}")
+                }
+            }
+
+            // Step 2: Sync pending OTPs
             val pendingOtps = pendingOtpDao.getPendingOtps().first()
 
             if (pendingOtps.isEmpty()) {
@@ -68,16 +81,12 @@ class SyncWorker(
                 return Result.success()
             }
 
-            Log.d(TAG, "Syncing ${pendingOtps.size} pending OTPs")
-
-            // Get device ID and user info
-            val deviceId = app.preferencesManager.deviceId.first()
-            val orgId = app.preferencesManager.organizationId.first()
-
-            if (deviceId == null || orgId == null) {
-                Log.w(TAG, "Device not registered or no organization")
+            if (deviceId == null) {
+                Log.w(TAG, "Device not registered, skipping OTP sync")
                 return Result.retry()
             }
+
+            Log.d(TAG, "Syncing ${pendingOtps.size} pending OTPs")
 
             // Sync each OTP
             var successCount = 0

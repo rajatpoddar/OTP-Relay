@@ -22,6 +22,9 @@ import androidx.compose.ui.unit.sp
 import com.otprelay.OTPRelayApp
 import com.otprelay.data.remote.ApiClient
 import com.otprelay.data.model.LoginRequest
+import com.otprelay.data.model.DeviceRegisterRequest
+import android.os.Build
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 @Composable
@@ -155,6 +158,54 @@ fun LoginScreen(
 
                             // Set API client token
                             ApiClient.setAuthToken(data.access_token)
+
+                            // Mark as activated (persists across app restarts)
+                            app.preferencesManager.setActivated(true)
+
+                            // Register device with server
+                            try {
+                                var deviceId = app.preferencesManager.deviceId.first()
+                                if (deviceId == null) {
+                                    deviceId = java.util.UUID.randomUUID().toString()
+                                    app.preferencesManager.saveDeviceId(deviceId)
+                                }
+                                app.apiService.registerDevice(
+                                    DeviceRegisterRequest(
+                                        device_id = deviceId,
+                                        activation_code = "DEFAULT",
+                                        model = Build.MODEL,
+                                        android_version = Build.VERSION.RELEASE,
+                                        app_version = "1.0.0"
+                                    )
+                                )
+                                Log.d("LoginScreen", "Device registered: $deviceId")
+                            } catch (e: Exception) {
+                                Log.w("LoginScreen", "Device registration failed (non-fatal): ${e.message}")
+                            }
+
+                            // Sync authorized senders from server
+                            try {
+                                val senderResponse = app.apiService.getSenderIds()
+                                if (senderResponse.isSuccessful) {
+                                    val senders = senderResponse.body()?.map { sender ->
+                                        com.otprelay.data.local.AuthorizedSender(
+                                            senderId = sender.sender_id,
+                                            displayName = sender.display_name,
+                                            serviceCode = sender.display_name,
+                                            otpLength = sender.otp_length,
+                                            extractionRegex = null,
+                                            isAuthorized = true
+                                        )
+                                    } ?: emptyList()
+                                    if (senders.isNotEmpty()) {
+                                        app.database.authorizedSenderDao().deleteAll()
+                                        app.database.authorizedSenderDao().insertSenders(senders)
+                                        Log.d("LoginScreen", "Synced ${senders.size} authorized senders")
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                Log.w("LoginScreen", "Sender sync failed (non-fatal): ${e.message}")
+                            }
 
                             onLoginSuccess()
                         } else {
