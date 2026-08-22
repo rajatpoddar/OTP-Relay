@@ -227,8 +227,16 @@ cd backend && python3 -c "import ast; import os; [ast.parse(open(os.path.join(r,
 # Frontend
 cd frontend && npm run build
 
-# Docker
+# Docker (manual)
 sudo docker-compose -f docker-compose.prod.yml up -d --build
+```
+
+## Deploy Script
+
+```bash
+# On NAS server (after git push from Mac)
+./deploy.sh           # Normal deploy (keeps database)
+./deploy.sh --fresh   # Fresh deploy (reset database + reseed)
 ```
 
 ---
