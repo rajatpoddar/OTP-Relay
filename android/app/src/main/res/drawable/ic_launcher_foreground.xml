@@ -4,34 +4,26 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Shield shape -->
+    <!-- Shield shape - bold and clear -->
     <path
-        android:fillColor="#4648D4"
-        android:pathData="M54,18 L84,32 L84,54 C84,74 70,90 54,94 C38,90 24,74 24,54 L24,32 Z" />
-    <!-- Inner shield lighter -->
-    <path
-        android:fillColor="#5C5FEF"
-        android:pathData="M54,24 L80,36 L80,54 C80,70 68,84 54,88 C40,84 28,70 28,54 L28,36 Z" />
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,22 L80,34 L80,54 C80,72 68,86 54,90 C40,86 28,72 28,54 L28,34 Z" />
     <!-- Lock body -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M44,50 L64,50 L64,70 L44,70 Z" />
-    <!-- Lock body rounded bottom -->
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M44,68 Q44,72 48,72 L60,72 Q64,72 64,68 L64,50 L44,50 Z" />
-    <!-- Lock shackle -->
+        android:fillColor="#4648D4"
+        android:pathData="M46,52 L62,52 L62,70 L46,70 Z" />
+    <!-- Lock shackle - simple arc -->
     <path
         android:fillColor="@android:color/transparent"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="3"
-        android:pathData="M48,50 L48,42 C48,37 51,34 54,34 C57,34 60,37 60,42 L60,50" />
-    <!-- Keyhole circle -->
+        android:strokeColor="#4648D4"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M49,52 L49,44 C49,39 51.5,36 54,36 C56.5,36 59,39 59,44 L59,52" />
+    <!-- Keyhole -->
     <path
-        android:fillColor="#4648D4"
-        android:pathData="M54,58 m-3,0 a3,3 0,1 1,6 0 a3,3 0,1 1,-6 0" />
-    <!-- Keyhole dot -->
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,58 m-2.5,0 a2.5,2.5 0,1 1,5 0 a2.5,2.5 0,1 1,-5 0" />
     <path
-        android:fillColor="#4648D4"
-        android:pathData="M54,58 m-1.2,0 a1.2,1.2 0,1 1,2.4 0 a1.2,1.2 0,1 1,-2.4 0" />
+        android:fillColor="#FFFFFF"
+        android:pathData="M53,60 L55,60 L55,65 L53,65 Z" />
 </vector>
