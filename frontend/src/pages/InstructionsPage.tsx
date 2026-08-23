@@ -1,7 +1,19 @@
 import { Link } from 'react-router-dom'
 import { Download, Shield, Users, Smartphone, Settings, CheckCircle, ArrowRight, Key, Mail, GitBranch, Radio } from 'lucide-react'
+import { useState, useEffect } from 'react'
 
-const APK_DOWNLOAD_URL = '/uploads/apk/otp-relay.apk'
+function useApkUrl() {
+  const [url, setUrl] = useState('/uploads/apk/otp-relay.apk')
+  useEffect(() => {
+    fetch('/api/public/app-version/latest')
+      .then(r => r.json())
+      .then(data => {
+        if (data.download_url) setUrl(data.download_url)
+      })
+      .catch(() => {})
+  }, [])
+  return url
+}
 
 const setupSteps = [
   {
@@ -133,6 +145,7 @@ const faqs = [
 ]
 
 export function InstructionsPage() {
+  const APK_DOWNLOAD_URL = useApkUrl()
   return (
     <div className="min-h-screen bg-surface">
       {/* Header */}

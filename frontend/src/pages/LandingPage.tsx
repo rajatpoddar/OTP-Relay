@@ -1,7 +1,19 @@
 import { Link } from 'react-router-dom'
 import { Download } from 'lucide-react'
+import { useState, useEffect } from 'react'
 
-const APK_DOWNLOAD_URL = '/uploads/apk/otp-relay.apk'
+function useApkUrl() {
+  const [url, setUrl] = useState('/uploads/apk/otp-relay.apk')
+  useEffect(() => {
+    fetch('/api/public/app-version/latest')
+      .then(r => r.json())
+      .then(data => {
+        if (data.download_url) setUrl(data.download_url)
+      })
+      .catch(() => {}) // fallback to default
+  }, [])
+  return url
+}
 
 const faqs = [
   {
@@ -64,6 +76,7 @@ const pricing = [
 ]
 
 export function LandingPage() {
+  const APK_DOWNLOAD_URL = useApkUrl()
   return (
     <div className="min-h-screen">
       {/* Header */}

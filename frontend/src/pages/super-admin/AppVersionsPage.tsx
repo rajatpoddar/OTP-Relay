@@ -1,7 +1,13 @@
 import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../services/api'
-import { Smartphone, Plus, X, CheckCircle, AlertTriangle, Upload, Download, Trash2, Send, Eye } from 'lucide-react'
+import { Smartphone, Plus, X, CheckCircle, AlertTriangle, Upload, Download, Trash2, Send, Eye, FileUp } from 'lucide-react'
+
+declare global {
+  interface Window {
+    __uploadedApkUrl?: string
+  }
+}
 
 interface AppVersion {
   id: string
@@ -18,6 +24,8 @@ interface AppVersion {
 export function AppVersionsPage() {
   const [showForm, setShowForm] = useState(false)
   const [showDetail, setShowDetail] = useState<AppVersion | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState('')
   const queryClient = useQueryClient()
 
   const { data: versions, isLoading } = useQuery<AppVersion[]>({
@@ -49,6 +57,25 @@ export function AppVersionsPage() {
     },
   })
 
+  const handleUploadApk = async (file: File) => {
+    setUploading(true)
+    setUploadProgress('Uploading APK...')
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const response = await api.post('/api/upload/apk', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      setUploadProgress(`✅ Uploaded! URL: ${response.data.download_url}`)
+      return response.data.download_url
+    } catch (e: any) {
+      setUploadProgress(`❌ Upload failed: ${e.response?.data?.detail || e.message}`)
+      return null
+    } finally {
+      setUploading(false)
+    }
+  }
+
   const latestVersion = versions?.[0]
 
   return (
@@ -59,13 +86,35 @@ export function AppVersionsPage() {
           <p className="text-body-md font-body-md text-on-surface-variant mt-1">
             Manage Android app versions, push updates, and control force updates.
           </p>
-        </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="px-4 py-2 bg-primary text-on-primary rounded-lg text-label-sm font-label-sm flex items-center gap-2 hover:bg-inverse-surface transition-colors"
-        >
-          <Plus className="w-4 h-4" /> Push New Version
-        </button>
+        </div>          <div className="flex gap-2">
+            <label className="px-4 py-2 bg-tertiary-fixed-dim/10 text-tertiary-fixed-dim border border-tertiary-fixed-dim/30 rounded-lg text-label-sm font-label-sm flex items-center gap-2 hover:bg-tertiary-fixed-dim/20 transition-colors cursor-pointer">
+              <FileUp className="w-4 h-4" /> Upload APK
+              <input
+                type="file"
+                accept=".apk"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0]
+                  if (file) {
+                    const url = await handleUploadApk(file)
+                    if (url) {
+                      // Auto-fill the form with uploaded URL
+                      setShowForm(true)
+                      // We'll pass URL via a custom event or state
+                      window.__uploadedApkUrl = url
+                    }
+                  }
+                  e.target.value = ''
+                }}
+              />
+            </label>
+            <button
+              onClick={() => setShowForm(true)}
+              className="px-4 py-2 bg-primary text-on-primary rounded-lg text-label-sm font-label-sm flex items-center gap-2 hover:bg-inverse-surface transition-colors"
+            >
+              <Plus className="w-4 h-4" /> Push New Version
+            </button>
+          </div>
       </div>
 
       {/* Current Version Status */}
@@ -103,6 +152,17 @@ export function AppVersionsPage() {
               </p>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Upload Progress */}
+      {uploadProgress && (
+        <div className={`p-4 rounded-lg text-sm ${
+          uploadProgress.startsWith('✅') ? 'bg-green-50 text-green-800 border border-green-200' :
+          uploadProgress.startsWith('❌') ? 'bg-red-50 text-red-800 border border-red-200' :
+          'bg-blue-50 text-blue-800 border border-blue-200'
+        }`}>
+          {uploadProgress}
         </div>
       )}
 
@@ -339,7 +399,12 @@ function VersionForm({
   const [minSupported, setMinSupported] = useState('')
   const [forceUpdate, setForceUpdate] = useState(false)
   const [releaseNotes, setReleaseNotes] = useState('')
-  const [downloadUrl, setDownloadUrl] = useState('')
+  const [downloadUrl, setDownloadUrl] = useState((window as any).__uploadedApkUrl || '')
+
+  // Clear the global URL after using it
+  useState(() => {
+    delete (window as any).__uploadedApkUrl
+  })
 
   // Auto-suggest version
   const suggestVersion = () => {
