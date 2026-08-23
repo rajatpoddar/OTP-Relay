@@ -1,4 +1,7 @@
 import { Link } from 'react-router-dom'
+import { Download } from 'lucide-react'
+
+const APK_DOWNLOAD_URL = '/uploads/apk/otp-relay.apk'
 
 const faqs = [
   {
@@ -77,8 +80,12 @@ export function LandingPage() {
             <a className="text-body-md text-on-surface hover:text-primary transition-colors" href="#security">Security</a>
             <a className="text-body-md text-on-surface hover:text-primary transition-colors" href="#pricing">Pricing</a>
           </nav>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <Link className="text-body-md font-medium text-on-surface hover:text-primary hidden md:block" to="/login">Login</Link>
+            <a href={APK_DOWNLOAD_URL} download className="flex items-center gap-1.5 bg-tertiary-fixed-dim/10 text-tertiary-fixed-dim border border-tertiary-fixed-dim/30 px-3 py-2 rounded-lg text-label-sm font-label-sm hover:bg-tertiary-fixed-dim/20 transition-colors">
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">Download App</span>
+            </a>
             <Link className="bg-primary text-on-primary px-4 py-2 rounded-lg text-body-md font-medium hover:bg-primary/90 transition-colors" to="/login">Get Started</Link>
           </div>
         </div>
@@ -86,44 +93,50 @@ export function LandingPage() {
 
       <main className="pt-16">
         {/* Hero Section */}
-        <section className="relative pt-16 sm:pt-24 pb-20 sm:pb-32 overflow-hidden bg-surface-container-lowest">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 grid lg:grid-cols-2 gap-10 sm:gap-16 items-center">
-            <div>
-              <h1 className="font-display-lg text-on-background mb-4 sm:mb-6">Stop Calling Officers for OTPs.</h1>
-              <p className="font-body-lg text-on-surface-variant mb-6 sm:mb-8 max-w-xl">Automate OTP routing, reduce operational delays, and maintain a complete audit trail of OTP handling.</p>
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                <Link to="/login" className="bg-primary text-on-primary px-5 sm:px-6 py-3 rounded-lg text-body-lg font-medium text-center hover:bg-primary/90 transition-colors">Deploy OTP Relay</Link>
-                <a href="#demo" className="border border-outline bg-surface-container-lowest text-on-background px-5 sm:px-6 py-3 rounded-lg text-body-lg font-medium text-center hover:bg-surface-container transition-colors">View Live Demo</a>
-              </div>
-            </div>
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-tr from-surface-container-highest to-surface rounded-xl transform rotate-3 scale-105"></div>
-              <div className="relative bg-surface-container-lowest border border-outline-variant rounded-xl p-4 sm:p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-on-surface-variant">account_balance</span>
-                    <span className="font-label-sm text-on-surface-variant">Department</span>
-                  </div>
-                  <span className="material-symbols-outlined text-primary">arrow_forward</span>
-                  <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-on-surface-variant">smartphone</span>
-                    <span className="font-label-sm text-on-surface-variant">Staff Mobile</span>
-                  </div>
-                  <span className="material-symbols-outlined text-primary">arrow_forward</span>
-                  <div className="flex items-center gap-3 bg-surface-container py-2 px-4 rounded-full">
-                    <span className="material-symbols-outlined text-primary text-sm">lock</span>
-                    <span className="font-label-sm text-primary">Authorized Relay</span>
-                  </div>
+        <section className="relative pt-12 sm:pt-24 pb-16 sm:pb-32 overflow-hidden bg-surface-container-lowest">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
+            {/* Mobile: stacked layout, Desktop: side by side */}
+            <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+              <div className="text-center lg:text-left">
+                <h1 className="text-3xl sm:text-4xl lg:text-display-lg font-display-lg text-on-background mb-3 sm:mb-6 leading-tight">Stop Calling Officers for OTPs.</h1>
+                <p className="text-base sm:text-body-lg text-on-surface-variant mb-6 sm:mb-8 max-w-xl mx-auto lg:mx-0">Automate OTP routing, reduce operational delays, and maintain a complete audit trail of OTP handling.</p>
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
+                  <Link to="/login" className="bg-primary text-on-primary px-5 sm:px-6 py-3 rounded-lg text-body-lg font-medium text-center hover:bg-primary/90 transition-colors">Deploy OTP Relay</Link>
+                  <a href={APK_DOWNLOAD_URL} download className="flex items-center justify-center gap-2 bg-tertiary-fixed-dim/10 text-tertiary-fixed-dim border border-tertiary-fixed-dim/30 px-5 sm:px-6 py-3 rounded-lg text-body-lg font-medium hover:bg-tertiary-fixed-dim/20 transition-colors">
+                    <Download className="w-5 h-5" />
+                    Download App
+                  </a>
                 </div>
-                <div className="bg-surface-container-low rounded-lg p-3 sm:p-4 border border-outline-variant">
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="font-label-sm text-on-surface-variant">Sender: BT-VBGRAM-G</span>
-                    <span className="font-mono-data text-primary">02:14 PM</span>
+              </div>
+              <div className="relative hidden lg:block">
+                <div className="absolute inset-0 bg-gradient-to-tr from-surface-container-highest to-surface rounded-xl transform rotate-3 scale-105"></div>
+                <div className="relative bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm">
+                  <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-3">
+                      <span className="material-symbols-outlined text-on-surface-variant">account_balance</span>
+                      <span className="font-label-sm text-on-surface-variant">Department</span>
+                    </div>
+                    <span className="material-symbols-outlined text-primary">arrow_forward</span>
+                    <div className="flex items-center gap-3">
+                      <span className="material-symbols-outlined text-on-surface-variant">smartphone</span>
+                      <span className="font-label-sm text-on-surface-variant">Staff Mobile</span>
+                    </div>
+                    <span className="material-symbols-outlined text-primary">arrow_forward</span>
+                    <div className="flex items-center gap-3 bg-surface-container py-2 px-4 rounded-full">
+                      <span className="material-symbols-outlined text-primary text-sm">lock</span>
+                      <span className="font-label-sm text-primary">Authorized Relay</span>
+                    </div>
                   </div>
-                  <p className="font-body-md text-on-background mb-3 text-sm sm:text-base">Service: VBGRAMG<br />Purpose: FTO Login<br />Reference: 000*<br />OTP: 980847</p>
-                  <div className="flex gap-2">
-                    <span className="px-2 py-1 bg-surface-container text-on-surface text-xs rounded truncate">Jharkhand → Deoghar → Palojori → Palojori Block Office</span>
-                    <span className="px-2 py-1 bg-surface-container-highest text-on-surface text-xs rounded">Auto-Routed</span>
+                  <div className="bg-surface-container-low rounded-lg p-4 border border-outline-variant">
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="font-label-sm text-on-surface-variant">Sender: BT-VBGRAM-G</span>
+                      <span className="font-mono-data text-primary">02:14 PM</span>
+                    </div>
+                    <p className="font-body-md text-on-background mb-3">Service: VBGRAMG<br />Purpose: FTO Login<br />Reference: 000*<br />OTP: 980847</p>
+                    <div className="flex gap-2">
+                      <span className="px-2 py-1 bg-surface-container text-on-surface text-xs rounded truncate">Jharkhand → Deoghar → Palojori → Palojori Block Office</span>
+                      <span className="px-2 py-1 bg-surface-container-highest text-on-surface text-xs rounded">Auto-Routed</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -360,14 +373,20 @@ export function LandingPage() {
           <div>
             <h4 className="text-white font-semibold mb-4">Resources</h4>
             <ul className="space-y-2 text-sm">
-              <li><a className="hover:text-white transition-colors" href="#">Documentation</a></li>
-              <li><a className="hover:text-white transition-colors" href="#">Deployment Guide</a></li>
+              <li><Link className="hover:text-white transition-colors" to="/instructions">Documentation</Link></li>
+              <li><Link className="hover:text-white transition-colors" to="/instructions">Setup Guide</Link></li>
               <li><a className="hover:text-white transition-colors" href="#faq">FAQ</a></li>
             </ul>
           </div>
           <div>
             <h4 className="text-white font-semibold mb-4">Access</h4>
-            <Link to="/login" className="block px-4 py-2 bg-slate-800 border border-slate-700 text-white rounded hover:bg-slate-700 transition-colors w-full text-sm font-medium text-center">Office Login</Link>
+            <div className="space-y-2">
+              <Link to="/login" className="block px-4 py-2 bg-slate-800 border border-slate-700 text-white rounded hover:bg-slate-700 transition-colors w-full text-sm font-medium text-center">Office Login</Link>
+              <a href={APK_DOWNLOAD_URL} download className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 text-white rounded hover:bg-slate-700 transition-colors w-full text-sm font-medium">
+                <Download className="w-4 h-4" />
+                Download App
+              </a>
+            </div>
           </div>
         </div>
         <div className="max-w-7xl mx-auto px-6 mt-12 pt-8 border-t border-slate-800 text-sm text-center">

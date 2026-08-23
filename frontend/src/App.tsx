@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import { LoginPage } from './pages/LoginPage'
 import { LandingPage } from './pages/LandingPage'
+import { InstructionsPage } from './pages/InstructionsPage'
 import { DashboardLayout } from './components/layout/DashboardLayout'
 
 // Super Admin
@@ -43,6 +44,7 @@ function App() {
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/instructions" element={<InstructionsPage />} />
       <Route path="/app" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
         <Route index element={<Navigate to="/app/dashboard" replace />} />
         <Route path="dashboard" element={<RoleBasedDashboard />} />
