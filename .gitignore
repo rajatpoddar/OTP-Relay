@@ -73,6 +73,11 @@ android/.gradle/
 android/app/build/
 android/local.properties
 *.hprof
+android/build/
+android/app/build/outputs/apk/
+
+# Temp logs
+/tmp/
 
 # Coverage
 coverage/
