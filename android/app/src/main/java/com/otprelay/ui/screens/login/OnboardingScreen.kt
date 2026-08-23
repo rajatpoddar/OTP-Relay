@@ -37,12 +37,15 @@ fun OnboardingScreen(
     var senderIds by remember { mutableStateOf<List<String>>(emptyList()) }
     var selectedSenders by remember { mutableStateOf<Set<String>>(emptySet()) }
 
-    // Fetch available sender IDs
+    // Fetch available sender IDs from staff endpoint
     LaunchedEffect(Unit) {
         try {
-            val response = app.apiService.getSenderIds()
+            val response = app.apiService.getAvailableSenders()
             if (response.isSuccessful) {
                 senderIds = response.body()?.map { it.sender_id } ?: emptyList()
+                Log.d("Onboarding", "Fetched ${senderIds.size} available sender IDs")
+            } else {
+                Log.w("Onboarding", "Failed to fetch sender IDs: ${response.code()}")
             }
         } catch (e: Exception) {
             Log.w("Onboarding", "Failed to fetch sender IDs: ${e.message}")

@@ -126,6 +126,13 @@ data class AuthorizeResponse(
     val created_at: String
 )
 
+// Available Senders (for onboarding selection)
+data class AvailableSenderResponse(
+    val sender_id: String,
+    val display_name: String?,
+    val otp_length: Int
+)
+
 // My Authorized Senders (staff-specific)
 data class MySenderResponse(
     val sender_id: String,

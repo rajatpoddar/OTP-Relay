@@ -330,6 +330,30 @@ async def list_my_authorizations(
     return [StaffAuthResponse.model_validate(a) for a in result.scalars().all()]
 
 
+@router.get("/staff/available-senders")
+async def list_available_senders(
+    tenant: TenantContextResult = Depends(get_tenant_context),
+):
+    """Return all active sender IDs in this organization.
+    Used by Android onboarding screen for staff to choose from."""
+    result = await tenant.db.execute(
+        select(SenderId).where(
+            SenderId.organization_id == tenant.organization_id,
+            SenderId.is_active == True,
+        )
+    )
+    senders = result.scalars().all()
+
+    return [
+        {
+            "sender_id": s.sender_id,
+            "display_name": s.display_name,
+            "otp_length": s.otp_length,
+        }
+        for s in senders
+    ]
+
+
 @router.get("/staff/my-senders")
 async def list_my_authorized_senders(
     tenant: TenantContextResult = Depends(get_tenant_context),
