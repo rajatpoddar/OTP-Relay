@@ -83,7 +83,7 @@ export function LandingPage() {
       <header className="fixed top-0 w-full bg-surface/90 backdrop-blur-md border-b border-outline-variant z-50">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-2xl text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>security</span>
+            <img src="/logo.png" alt="OTP Relay" className="w-8 h-8 rounded" />
             <span className="font-headline-sm text-primary font-bold tracking-tight">OTP Relay</span>
           </div>
           <nav className="hidden md:flex items-center gap-8">
@@ -370,7 +370,7 @@ export function LandingPage() {
         <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center gap-2 mb-6">
-              <span className="material-symbols-outlined text-white text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>security</span>
+              <img src="/logo.png" alt="OTP Relay" className="w-8 h-8 rounded" />
               <span className="font-headline-sm text-white font-bold tracking-tight">OTP Relay</span>
             </div>
             <p className="text-sm">Secure OTP operations and routing for enterprise offices.</p>
