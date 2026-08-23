@@ -215,7 +215,7 @@ fun OtpVerificationScreen(
                                 Log.e("OtpVerification", "Device registration error: ${e.message}")
                             }
 
-                            // Sync only this staff's authorized senders
+                            // Sync only this staff's authorized senders with operator routing info
                             try {
                                 val senderResponse = app.apiService.getMySenders()
                                 if (senderResponse.isSuccessful) {
@@ -226,7 +226,8 @@ fun OtpVerificationScreen(
                                             serviceCode = sender.display_name,
                                             otpLength = sender.otp_length,
                                             extractionRegex = sender.extraction_regex,
-                                            isAuthorized = sender.is_authorized
+                                            isAuthorized = sender.is_authorized,
+                                            routedTo = sender.routed_to?.joinToString(", ")
                                         )
                                     } ?: emptyList()
                                     app.database.authorizedSenderDao().deleteAll()

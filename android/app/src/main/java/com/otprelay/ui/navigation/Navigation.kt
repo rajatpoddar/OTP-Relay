@@ -1,12 +1,15 @@
 package com.otprelay.ui.navigation
 
-import androidx.compose.runtime.Composable
+import android.util.Log
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.*
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.otprelay.ui.screens.activity.OtpActivityScreen
 import com.otprelay.ui.screens.authorizations.AuthorizationsScreen
+import com.otprelay.ui.screens.consent.ConsentScreen
 import com.otprelay.ui.screens.dashboard.DashboardScreen
 import com.otprelay.ui.screens.login.LoginScreen
 import com.otprelay.ui.screens.login.OtpVerificationScreen
@@ -14,8 +17,10 @@ import com.otprelay.ui.screens.login.OnboardingScreen
 import com.otprelay.ui.screens.permissions.PermissionsScreen
 import com.otprelay.ui.screens.settings.SettingsScreen
 import com.otprelay.ui.screens.welcome.WelcomeScreen
+import kotlinx.coroutines.flow.first
 
 sealed class Screen(val route: String) {
+    object Consent : Screen("consent")
     object Welcome : Screen("welcome")
     object Login : Screen("login")
     object OtpVerification : Screen("otp_verification/{mobileNumber}")
@@ -29,13 +34,48 @@ sealed class Screen(val route: String) {
 
 @Composable
 fun OTPRelayNavGraph(
-    startDestination: String = Screen.Welcome.route,
     navController: NavHostController = rememberNavController()
 ) {
+    var startDestination by remember { mutableStateOf<String?>(null) }
+
+    // Check consent status on first composition
+    LaunchedEffect(Unit) {
+        try {
+            val context = navController.context
+            val app = context.applicationContext as com.otprelay.OTPRelayApp
+            val consentGiven = app.preferencesManager.consentGiven.first()
+            startDestination = if (consentGiven) Screen.Welcome.route else Screen.Consent.route
+        } catch (e: Exception) {
+            Log.e("NavGraph", "Error checking consent", e)
+            startDestination = Screen.Welcome.route
+        }
+    }
+
+    // Show loading while checking
+    if (startDestination == null) {
+        androidx.compose.foundation.layout.Box(
+            modifier = androidx.compose.ui.Modifier.fillMaxSize(),
+            contentAlignment = androidx.compose.ui.Alignment.Center
+        ) {
+            androidx.compose.material3.CircularProgressIndicator()
+        }
+        return
+    }
+
     NavHost(
         navController = navController,
-        startDestination = startDestination
+        startDestination = startDestination!!
     ) {
+        composable(Screen.Consent.route) {
+            ConsentScreen(
+                onConsentGiven = {
+                    navController.navigate(Screen.Welcome.route) {
+                        popUpTo(Screen.Consent.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable(Screen.Welcome.route) {
             WelcomeScreen(
                 onNavigateToLogin = {
@@ -134,7 +174,7 @@ fun OTPRelayNavGraph(
             SettingsScreen(
                 onBack = { navController.popBackStack() },
                 onLogout = {
-                    navController.navigate(Screen.Welcome.route) {
+                    navController.navigate(Screen.Consent.route) {
                         popUpTo(0) { inclusive = true }
                     }
                 }

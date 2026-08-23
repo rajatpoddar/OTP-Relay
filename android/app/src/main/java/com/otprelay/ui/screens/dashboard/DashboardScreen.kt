@@ -35,15 +35,25 @@ fun DashboardScreen(
     val context = LocalContext.current
     val app = context.applicationContext as OTPRelayApp
 
-    // Safe database access with error handling
+    // Recent OTPs - only 3 for home screen
     val recentOtps by remember {
         try {
-            app.database.pendingOtpDao().getRecentOtps(10)
+            app.database.pendingOtpDao().getRecentOtps(3)
         } catch (e: Exception) {
             Log.e("DashboardScreen", "Failed to access database", e)
             flowOf(emptyList())
         }
     }.collectAsState(initial = emptyList())
+
+    // Total count for "More" button
+    var totalCount by remember { mutableIntStateOf(0) }
+    LaunchedEffect(Unit) {
+        try {
+            totalCount = app.database.pendingOtpDao().getPendingCount()
+        } catch (e: Exception) {
+            Log.e("DashboardScreen", "Failed to get count", e)
+        }
+    }
 
     var pendingCount by remember { mutableIntStateOf(0) }
     LaunchedEffect(Unit) {
@@ -62,14 +72,10 @@ fun DashboardScreen(
     var downloadedFilePath by remember { mutableStateOf<String?>(null) }
     var showInstallDialog by remember { mutableStateOf(false) }
 
-    // Show update dialog when update is available
     LaunchedEffect(updateInfo) {
-        if (updateInfo != null) {
-            showUpdateDialog = true
-        }
+        if (updateInfo != null) showUpdateDialog = true
     }
 
-    // Update Dialog
     if (showUpdateDialog && updateInfo != null) {
         UpdateDialog(
             version = updateInfo!!.version,
@@ -79,35 +85,20 @@ fun DashboardScreen(
             downloadProgress = downloadProgress,
             onUpdateClick = {
                 isDownloading = true
-                val url = updateInfo!!.downloadUrl
-                if (url != null) {
-                    app.updateManager.downloadApk(url)
-                }
+                updateInfo!!.downloadUrl?.let { app.updateManager.downloadApk(it) }
             },
-            onSkipClick = {
-                showUpdateDialog = false
-                app.clearUpdateNotification()
-            },
+            onSkipClick = { showUpdateDialog = false; app.clearUpdateNotification() },
             onDismiss = {
-                if (!updateInfo!!.isForceUpdate) {
-                    showUpdateDialog = false
-                    app.clearUpdateNotification()
-                }
+                if (!updateInfo!!.isForceUpdate) { showUpdateDialog = false; app.clearUpdateNotification() }
             }
         )
     }
 
-    // Install Dialog
     if (showInstallDialog && downloadedFilePath != null) {
         InstallDialog(
             version = updateInfo?.version ?: "unknown",
-            onInstallClick = {
-                app.updateManager.installApk(downloadedFilePath!!)
-                showInstallDialog = false
-            },
-            onDismiss = {
-                showInstallDialog = false
-            }
+            onInstallClick = { app.updateManager.installApk(downloadedFilePath!!); showInstallDialog = false },
+            onDismiss = { showInstallDialog = false }
         )
     }
 
@@ -127,18 +118,22 @@ fun DashboardScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp),
+                .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Status Card
+            // Spacer for top padding
+            item { Spacer(modifier = Modifier.height(4.dp)) }
+
+            // Status Card - Full width with good contrast
             item {
                 Card(
+                    modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                        containerColor = MaterialTheme.colorScheme.primary
                     )
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.padding(20.dp)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically
@@ -146,33 +141,27 @@ fun DashboardScreen(
                             Icon(
                                 Icons.Default.CheckCircle,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.tertiary
+                                tint = MaterialTheme.colorScheme.onPrimary
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(10.dp))
                             Text(
                                 text = "OTP Relay Active",
                                 color = MaterialTheme.colorScheme.onPrimary,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                        Text(
-                            text = "Service: Running in background",
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            fontSize = 14.sp
-                        )
-                        Text(
-                            text = "Pending sync: $pendingCount OTPs",
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            fontSize = 14.sp
-                        )
-                        Text(
-                            text = "SMS monitoring: Active",
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            fontSize = 14.sp
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            StatusItem(label = "Service", value = "Running", color = MaterialTheme.colorScheme.onPrimary)
+                            StatusItem(label = "Pending", value = "$pendingCount OTPs", color = MaterialTheme.colorScheme.onPrimary)
+                            StatusItem(label = "SMS", value = "Active", color = MaterialTheme.colorScheme.onPrimary)
+                        }
                     }
                 }
             }
@@ -207,21 +196,31 @@ fun DashboardScreen(
                 }
             }
 
-            // Recent OTPs
+            // Recent OTPs header with More button
             item {
-                Text(
-                    text = "Recent OTPs",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Recent OTPs",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    if (totalCount > 3) {
+                        TextButton(onClick = onNavigateToActivity) {
+                            Text("View All ($totalCount)")
+                            Icon(Icons.Default.ArrowForward, contentDescription = null, modifier = Modifier.size(16.dp))
+                        }
+                    }
+                }
             }
 
             if (recentOtps.isEmpty()) {
                 item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
+                    Card(modifier = Modifier.fillMaxWidth()) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -235,13 +234,10 @@ fun DashboardScreen(
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "No OTPs yet",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Text("No OTPs yet", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "OTP messages will appear here when received",
+                                "OTP messages will appear here when received",
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -253,14 +249,21 @@ fun DashboardScreen(
                     OtpCard(otp = otp)
                 }
             }
+
+            // Bottom spacer
+            item { Spacer(modifier = Modifier.height(16.dp)) }
         }
     }
 }
 
-/**
- * ActionCard uses stable Card + clickable modifier instead of experimental
- * Card(onClick=...) to avoid ExperimentalMaterial3Api crash on some devices.
- */
+@Composable
+fun StatusItem(label: String, value: String, color: androidx.compose.ui.graphics.Color) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(text = value, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = color)
+        Text(text = label, fontSize = 11.sp, color = color.copy(alpha = 0.7f))
+    }
+}
+
 @Composable
 fun ActionCard(
     modifier: Modifier = Modifier,
@@ -295,11 +298,9 @@ fun ActionCard(
 
 @Composable
 fun OtpCard(otp: PendingOtp) {
-    val dateFormat = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
+    val dateFormat = remember { SimpleDateFormat("dd MMM, HH:mm:ss", Locale.getDefault()) }
 
-    Card(
-        modifier = Modifier.fillMaxWidth()
-    ) {
+    Card(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -312,6 +313,7 @@ fun OtpCard(otp: PendingOtp) {
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp
                 )
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = dateFormat.format(Date(otp.extractedAt)),
                     fontSize = 12.sp,
@@ -319,7 +321,6 @@ fun OtpCard(otp: PendingOtp) {
                 )
             }
 
-            // OTP Value (masked)
             Text(
                 text = OtpExtractor.maskOtp(otp.otpValue),
                 fontSize = 16.sp,
@@ -329,7 +330,6 @@ fun OtpCard(otp: PendingOtp) {
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Sync Status
             Icon(
                 when (otp.syncStatus) {
                     "SYNCED" -> Icons.Default.CheckCircle

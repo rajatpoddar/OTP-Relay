@@ -142,7 +142,8 @@ data class MySenderResponse(
     val message_template: String?,
     val purpose_regex: String?,
     val reference_regex: String?,
-    val is_authorized: Boolean
+    val is_authorized: Boolean,
+    val routed_to: List<String>? = null
 )
 
 // Sender IDs

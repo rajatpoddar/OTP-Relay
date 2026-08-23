@@ -27,6 +27,7 @@ data class AuthorizedSender(
     val otpLength: Int = 6,
     val extractionRegex: String?,
     val isAuthorized: Boolean = true,
+    val routedTo: String? = null,  // Comma-separated operator names
     val lastUpdated: Long = System.currentTimeMillis()
 )
 
@@ -89,7 +90,7 @@ interface AuthorizedSenderDao {
 // Database
 @Database(
     entities = [PendingOtp::class, AuthorizedSender::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

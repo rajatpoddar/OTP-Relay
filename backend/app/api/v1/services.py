@@ -358,9 +358,9 @@ async def list_available_senders(
 async def list_my_authorized_senders(
     tenant: TenantContextResult = Depends(get_tenant_context),
 ):
-    """Return the staff's authorized sender IDs with full sender details.
+    """Return the staff's authorized sender IDs with full sender details and operator routing info.
     Used by Android app to sync only authorized senders to local DB."""
-    from app.models.staff_operator import Staff
+    from app.models.staff_operator import Staff, Operator
     from app.models.routing import AuthStatus
 
     staff = await tenant.db.execute(
@@ -384,6 +384,27 @@ async def list_my_authorized_senders(
     )
     rows = auth_result.all()
 
+    # Get routing rules to find operator names for each sender
+    routing_result = await tenant.db.execute(
+        select(RoutingRule, Operator).join(
+            Operator, RoutingRule.operator_id == Operator.id
+        ).where(
+            RoutingRule.organization_id == tenant.organization_id,
+            RoutingRule.is_active == True,
+        )
+    )
+    routing_rows = routing_result.all()
+
+    # Build sender_id -> operator_names mapping
+    sender_operators: dict = {}
+    for rule, operator in routing_rows:
+        if rule.sender_id:
+            sender_id_str = str(rule.sender_id)
+            if sender_id_str not in sender_operators:
+                sender_operators[sender_id_str] = []
+            if operator.full_name not in sender_operators[sender_id_str]:
+                sender_operators[sender_id_str].append(operator.full_name)
+
     return [
         {
             "sender_id": sender.sender_id,
@@ -394,6 +415,7 @@ async def list_my_authorized_senders(
             "purpose_regex": sender.purpose_regex,
             "reference_regex": sender.reference_regex,
             "is_authorized": True,
+            "routed_to": sender_operators.get(str(sender.id), []),
         }
         for auth, sender in rows
     ]

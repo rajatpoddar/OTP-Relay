@@ -8,7 +8,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.otprelay.ui.navigation.OTPRelayNavGraph
-import com.otprelay.ui.navigation.Screen
 import com.otprelay.ui.theme.OTPRelayTheme
 
 class MainActivity : ComponentActivity() {
@@ -23,7 +22,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    OTPRelayNavGraph(startDestination = Screen.Welcome.route)
+                    OTPRelayNavGraph()
                 }
             }
         }
