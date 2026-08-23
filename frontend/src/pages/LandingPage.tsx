@@ -2,8 +2,8 @@ import { Link } from 'react-router-dom'
 
 const faqs = [
   {
-    q: 'Does this bypass the government portal\'s authentication?',
-    a: 'No. OTP Relay simply acts as a secure delivery mechanism between the authorized officer\'s phone and the operator. The officer continues to receive the original SMS on their registered mobile number. OTP Relay does not replace or bypass the government portal\'s authentication.',
+    q: 'Does this bypass the portal\'s authentication?',
+    a: 'No. OTP Relay simply acts as a secure delivery mechanism between the authorized staff member\'s phone and the operator. The staff member continues to receive the original SMS on their registered mobile number. OTP Relay does not replace or bypass the portal\'s authentication.',
   },
   {
     q: 'What happens if the operator misuses an OTP?',
@@ -11,7 +11,7 @@ const faqs = [
   },
   {
     q: 'Does the platform read personal messages?',
-    a: 'No. The relay engine is configured to strictly process messages only from pre-approved government sender IDs. All other personal messages are completely ignored.',
+    a: 'No. The relay engine is configured to strictly process messages only from pre-approved authorized sender IDs. All other personal messages are completely ignored.',
   },
   {
     q: 'Can multiple operators share the same dashboard?',
@@ -86,19 +86,19 @@ export function LandingPage() {
 
       <main className="pt-16">
         {/* Hero Section */}
-        <section className="relative pt-24 pb-32 overflow-hidden bg-surface-container-lowest">
-          <div className="max-w-7xl mx-auto px-6 relative z-10 grid lg:grid-cols-2 gap-16 items-center">
+        <section className="relative pt-16 sm:pt-24 pb-20 sm:pb-32 overflow-hidden bg-surface-container-lowest">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 grid lg:grid-cols-2 gap-10 sm:gap-16 items-center">
             <div>
-              <h1 className="font-display-lg text-on-background mb-6">Stop Calling Officers for OTPs.</h1>
-              <p className="font-body-lg text-on-surface-variant mb-8 max-w-xl">Automate OTP routing, reduce operational delays, and maintain a complete audit trail of OTP handling.</p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link to="/login" className="bg-primary text-on-primary px-6 py-3 rounded-lg text-body-lg font-medium text-center hover:bg-primary/90 transition-colors">Deploy OTP Relay</Link>
-                <a href="#demo" className="border border-outline bg-surface-container-lowest text-on-background px-6 py-3 rounded-lg text-body-lg font-medium text-center hover:bg-surface-container transition-colors">View Live Demo</a>
+              <h1 className="font-display-lg text-on-background mb-4 sm:mb-6">Stop Calling Officers for OTPs.</h1>
+              <p className="font-body-lg text-on-surface-variant mb-6 sm:mb-8 max-w-xl">Automate OTP routing, reduce operational delays, and maintain a complete audit trail of OTP handling.</p>
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <Link to="/login" className="bg-primary text-on-primary px-5 sm:px-6 py-3 rounded-lg text-body-lg font-medium text-center hover:bg-primary/90 transition-colors">Deploy OTP Relay</Link>
+                <a href="#demo" className="border border-outline bg-surface-container-lowest text-on-background px-5 sm:px-6 py-3 rounded-lg text-body-lg font-medium text-center hover:bg-surface-container transition-colors">View Live Demo</a>
               </div>
             </div>
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-tr from-surface-container-highest to-surface rounded-xl transform rotate-3 scale-105"></div>
-              <div className="relative bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm">
+              <div className="relative bg-surface-container-lowest border border-outline-variant rounded-xl p-4 sm:p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-3">
                     <span className="material-symbols-outlined text-on-surface-variant">account_balance</span>
@@ -115,12 +115,12 @@ export function LandingPage() {
                     <span className="font-label-sm text-primary">Authorized Relay</span>
                   </div>
                 </div>
-                <div className="bg-surface-container-low rounded-lg p-4 border border-outline-variant">
+                <div className="bg-surface-container-low rounded-lg p-3 sm:p-4 border border-outline-variant">
                   <div className="flex justify-between items-start mb-2">
                     <span className="font-label-sm text-on-surface-variant">Sender: BT-VBGRAM-G</span>
                     <span className="font-mono-data text-primary">02:14 PM</span>
                   </div>
-                  <p className="font-body-md text-on-background mb-3">Service: VBGRAMG<br />Purpose: FTO Login<br />Reference: 000*<br />OTP: 980847</p>
+                  <p className="font-body-md text-on-background mb-3 text-sm sm:text-base">Service: VBGRAMG<br />Purpose: FTO Login<br />Reference: 000*<br />OTP: 980847</p>
                   <div className="flex gap-2">
                     <span className="px-2 py-1 bg-surface-container text-on-surface text-xs rounded truncate">Jharkhand → Deoghar → Palojori → Palojori Block Office</span>
                     <span className="px-2 py-1 bg-surface-container-highest text-on-surface text-xs rounded">Auto-Routed</span>
@@ -136,7 +136,7 @@ export function LandingPage() {
           <div className="max-w-7xl mx-auto px-6">
             <div className="text-center max-w-2xl mx-auto mb-16">
               <h2 className="font-display-md text-on-background mb-4">Every OTP Shouldn't Require a Phone Call.</h2>
-              <p className="font-body-lg text-on-surface-variant">The current reality of government operations involves inefficient workarounds that compromise security and speed.</p>
+              <p className="font-body-lg text-on-surface-variant">The current reality of field operations involves inefficient workarounds that compromise security and speed.</p>
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {problems.map((p) => (
@@ -164,7 +164,7 @@ export function LandingPage() {
                 { icon: 'lock', label: 'Authorized Relay', blue: true },
                 { icon: 'route', label: 'Routing' },
                 { icon: 'person', label: 'Operator' },
-                { icon: 'public', label: 'Government Portal' },
+                { icon: 'public', label: 'Web Portal' },
               ].map((step, i) => (
                 <div key={step.label} className="flex items-center gap-4">
                   {i > 0 && <span className="hidden md:block material-symbols-outlined text-outline-variant">arrow_forward</span>}
@@ -188,7 +188,7 @@ export function LandingPage() {
             </div>
             <div className="grid md:grid-cols-4 gap-8">
               {[
-                { num: 1, title: 'Authorize', desc: 'Staff grants explicit consent for specific government sender IDs.' },
+                { num: 1, title: 'Authorize', desc: 'Staff grants explicit consent for specific authorized sender IDs.' },
                 { num: 2, title: 'Receive', desc: 'The authorized app detects matching incoming SMS messages.' },
                 { num: 3, title: 'Route', desc: 'OTP Relay securely routes the authorized OTP to the designated operator dashboard.' },
                 { num: 4, title: 'Complete', desc: 'Operator views OTP, enters it in portal, and logs usage note.' },
@@ -208,7 +208,7 @@ export function LandingPage() {
         <section className="py-24 bg-surface-container-lowest" id="features">
           <div className="max-w-7xl mx-auto px-6">
             <div className="text-center mb-16">
-              <h2 className="font-display-md text-primary mb-4">Built for Government Office Operations</h2>
+              <h2 className="font-display-md text-primary mb-4">Built for Enterprise Operations</h2>
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {features.map((f) => (
@@ -347,7 +347,7 @@ export function LandingPage() {
               <span className="material-symbols-outlined text-white text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>security</span>
               <span className="font-headline-sm text-white font-bold tracking-tight">OTP Relay</span>
             </div>
-            <p className="text-sm">Secure OTP operations and routing for government offices.</p>
+            <p className="text-sm">Secure OTP operations and routing for enterprise offices.</p>
           </div>
           <div>
             <h4 className="text-white font-semibold mb-4">Product</h4>

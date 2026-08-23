@@ -8,7 +8,7 @@ from sqlalchemy.orm import joinedload
 
 from app.models.otp import OtpMessage, OtpStatus, OtpDeliveryEvent
 from app.models.device_service import SenderId
-from app.models.routing import RoutingRule, StaffSenderAuthorization, AuthStatus
+from app.models.routing import RoutingRule, StaffSenderAuthorization, AuthStatus, AuthorizationStatus
 from app.models.staff_operator import Operator, Staff, StaffOperatorOtpPreference
 from app.models.audit import AuditLog
 from app.api.v1.websocket import broadcast_new_otp
@@ -399,6 +399,7 @@ class OTPService:
         conditions = [
             RoutingRule.organization_id == organization_id,
             RoutingRule.is_active == True,
+            RoutingRule.authorization_status == AuthorizationStatus.AUTHORIZED,
             (RoutingRule.effective_from.is_(None) | (RoutingRule.effective_from <= now)),
             (RoutingRule.effective_to.is_(None) | (RoutingRule.effective_to >= now)),
         ]

@@ -12,6 +12,7 @@ class RoutingRuleCreate(BaseModel):
     operator_id: UUID
     priority: str = "normal"
     is_active: bool = True
+    authorization_status: str = "PENDING"
     effective_from: Optional[datetime] = None
     effective_to: Optional[datetime] = None
 
@@ -38,6 +39,10 @@ class RoutingRuleResponse(BaseModel):
     operator_id: UUID
     priority: str
     is_active: bool
+    authorization_status: str
+    authorized_at: Optional[datetime] = None
+    authorized_by: Optional[UUID] = None
+    rejection_reason: Optional[str] = None
     effective_from: Optional[datetime] = None
     effective_to: Optional[datetime] = None
     created_at: datetime

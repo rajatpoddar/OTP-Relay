@@ -7,7 +7,7 @@ from sqlalchemy import select
 from app.core.database import get_db
 from app.core.dependencies import get_tenant_context, TenantContextResult
 from app.models.device_service import DepartmentService, SenderId
-from app.models.routing import RoutingRule, StaffSenderAuthorization
+from app.models.routing import RoutingRule, StaffSenderAuthorization, AuthorizationStatus
 from app.schemas.routing import (
     DepartmentServiceCreate, DepartmentServiceUpdate, DepartmentServiceResponse,
     SenderIdCreate, SenderIdUpdate, SenderIdResponse,
@@ -130,6 +130,9 @@ async def create_routing_rule(
     request: RoutingRuleCreate,
     tenant: TenantContextResult = Depends(get_tenant_context),
 ):
+    # If a staff_id is specified, the rule requires staff authorization before routing
+    auth_status = AuthorizationStatus.PENDING if request.staff_id else AuthorizationStatus.AUTHORIZED
+
     rule = RoutingRule(
         organization_id=tenant.organization_id,
         name=request.name,
@@ -139,6 +142,7 @@ async def create_routing_rule(
         operator_id=request.operator_id,
         priority=request.priority,
         is_active=request.is_active,
+        authorization_status=auth_status,
         effective_from=request.effective_from,
         effective_to=request.effective_to,
     )
@@ -324,3 +328,87 @@ async def list_my_authorizations(
         select(StaffSenderAuthorization).where(StaffSenderAuthorization.staff_id == staff_obj.id)
     )
     return [StaffAuthResponse.model_validate(a) for a in result.scalars().all()]
+
+
+# --- Routing Rule Authorization (Staff) ---
+
+class RoutingRuleAuthorizeRequest(PydanticBaseModel):
+    rule_id: uuid.UUID
+    action: str  # "authorize" or "reject"
+    rejection_reason: Optional[str] = None
+
+
+@router.get("/staff/pending-rules")
+async def list_pending_routing_rules(
+    tenant: TenantContextResult = Depends(get_tenant_context),
+):
+    """List routing rules pending staff authorization."""
+    from app.models.staff_operator import Staff
+
+    staff = await tenant.db.execute(
+        select(Staff).where(
+            Staff.user_id == tenant.user_id,
+            Staff.organization_id == tenant.organization_id,
+        )
+    )
+    staff_obj = staff.scalar_one_or_none()
+    if not staff_obj:
+        raise HTTPException(status_code=404, detail="Staff profile not found")
+
+    result = await tenant.db.execute(
+        select(RoutingRule).where(
+            RoutingRule.organization_id == tenant.organization_id,
+            RoutingRule.staff_id == staff_obj.id,
+            RoutingRule.authorization_status == AuthorizationStatus.PENDING,
+            RoutingRule.is_active == True,
+        )
+    )
+    return [RoutingRuleResponse.model_validate(r) for r in result.scalars().all()]
+
+
+@router.post("/staff/authorize-rule")
+async def authorize_routing_rule(
+    request: RoutingRuleAuthorizeRequest,
+    tenant: TenantContextResult = Depends(get_tenant_context),
+):
+    """Staff member authorizes or rejects a routing rule targeted at them."""
+    from app.models.staff_operator import Staff
+    from datetime import datetime, timezone
+
+    staff = await tenant.db.execute(
+        select(Staff).where(
+            Staff.user_id == tenant.user_id,
+            Staff.organization_id == tenant.organization_id,
+        )
+    )
+    staff_obj = staff.scalar_one_or_none()
+    if not staff_obj:
+        raise HTTPException(status_code=404, detail="Staff profile not found")
+
+    # Fetch the rule
+    rule_result = await tenant.db.execute(
+        select(RoutingRule).where(
+            RoutingRule.id == request.rule_id,
+            RoutingRule.organization_id == tenant.organization_id,
+            RoutingRule.staff_id == staff_obj.id,
+        )
+    )
+    rule = rule_result.scalar_one_or_none()
+    if not rule:
+        raise HTTPException(status_code=404, detail="Routing rule not found or not assigned to you")
+
+    if request.action == "authorize":
+        rule.authorization_status = AuthorizationStatus.AUTHORIZED
+        rule.authorized_at = datetime.now(timezone.utc)
+        rule.authorized_by = staff_obj.id
+        rule.rejection_reason = None
+    elif request.action == "reject":
+        rule.authorization_status = AuthorizationStatus.REJECTED
+        rule.rejection_reason = request.rejection_reason or "Staff rejected this routing rule"
+    else:
+        raise HTTPException(status_code=400, detail="Action must be 'authorize' or 'reject'")
+
+    tenant.db.add(rule)
+    await tenant.db.flush()
+
+    return {"status": rule.authorization_status.value, "rule_id": str(rule.id)}

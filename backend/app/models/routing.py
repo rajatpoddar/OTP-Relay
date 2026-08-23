@@ -29,6 +29,13 @@ class StaffSenderAuthorization(Base):
     sender = relationship("SenderId", back_populates="authorizations")
 
 
+class AuthorizationStatus(str, enum.Enum):
+    PENDING = "PENDING"
+    AUTHORIZED = "AUTHORIZED"
+    REJECTED = "REJECTED"
+    REVOKED = "REVOKED"
+
+
 class RoutingRule(Base):
     __tablename__ = "routing_rules"
 
@@ -41,6 +48,14 @@ class RoutingRule(Base):
     operator_id = Column(UUID(as_uuid=True), ForeignKey("operators.id"), nullable=False, index=True)
     priority = Column(String(20), default="normal")  # low, normal, high, critical
     is_active = Column(Boolean, default=True, nullable=False)
+    authorization_status = Column(
+        SAEnum(AuthorizationStatus),
+        default=AuthorizationStatus.PENDING,
+        nullable=False,
+    )
+    authorized_at = Column(DateTime(timezone=True), nullable=True)
+    authorized_by = Column(UUID(as_uuid=True), ForeignKey("staff.id"), nullable=True)
+    rejection_reason = Column(Text, nullable=True)
     effective_from = Column(DateTime(timezone=True), nullable=True)
     effective_to = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
@@ -49,5 +64,5 @@ class RoutingRule(Base):
     # Relationships
     organization = relationship("Organization", back_populates="routing_rules")
     sender = relationship("SenderId", back_populates="routing_rules")
-    staff = relationship("Staff")
+    staff = relationship("Staff", foreign_keys=[staff_id])
     operator = relationship("Operator", back_populates="routing_rules")

@@ -8,40 +8,40 @@ import {
 import clsx from 'clsx'
 
 const superAdminLinks = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/organizations', icon: Building2, label: 'Organizations' },
-  { to: '/plans', icon: CreditCard, label: 'Plans' },
-  { to: '/subscriptions', icon: BadgeCheck, label: 'Subscriptions' },
-  { to: '/app-versions', icon: Package, label: 'App Versions' },
-  { to: '/audit', icon: History, label: 'Audit Logs' },
-  { to: '/settings', icon: Settings, label: 'Settings' },
+  { to: '/app/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/app/organizations', icon: Building2, label: 'Organizations' },
+  { to: '/app/plans', icon: CreditCard, label: 'Plans' },
+  { to: '/app/subscriptions', icon: BadgeCheck, label: 'Subscriptions' },
+  { to: '/app/app-versions', icon: Package, label: 'App Versions' },
+  { to: '/app/audit', icon: History, label: 'Audit Logs' },
+  { to: '/app/settings', icon: Settings, label: 'Settings' },
 ]
 
 const officeAdminLinks = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/staff', icon: Users, label: 'Staff' },
-  { to: '/operators', icon: UserCheck, label: 'Operators' },
-  { to: '/sender-ids', icon: Mail, label: 'Sender IDs' },
-  { to: '/routing', icon: GitBranch, label: 'Routing Rules' },
-  { to: '/devices', icon: Smartphone, label: 'Devices' },
-  { to: '/otp-activity', icon: Radio, label: 'OTP Activity' },
-  { to: '/reports', icon: BarChart3, label: 'Reports' },
-  { to: '/audit', icon: History, label: 'Audit Logs' },
-  { to: '/subscription', icon: CreditCard, label: 'Subscription' },
-  { to: '/settings', icon: Settings, label: 'Settings' },
+  { to: '/app/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/app/staff', icon: Users, label: 'Staff' },
+  { to: '/app/operators', icon: UserCheck, label: 'Operators' },
+  { to: '/app/sender-ids', icon: Mail, label: 'Sender IDs' },
+  { to: '/app/routing', icon: GitBranch, label: 'Routing Rules' },
+  { to: '/app/devices', icon: Smartphone, label: 'Devices' },
+  { to: '/app/otp-activity', icon: Radio, label: 'OTP Activity' },
+  { to: '/app/reports', icon: BarChart3, label: 'Reports' },
+  { to: '/app/audit', icon: History, label: 'Audit Logs' },
+  { to: '/app/subscription', icon: CreditCard, label: 'Subscription' },
+  { to: '/app/settings', icon: Settings, label: 'Settings' },
 ]
 
 const operatorLinks = [
-  { to: '/live-otps', icon: Radio, label: 'Live OTPs' },
-  { to: '/my-activity', icon: History, label: 'My Activity' },
-  { to: '/settings', icon: Settings, label: 'Profile' },
+  { to: '/app/live-otps', icon: Radio, label: 'Live OTPs' },
+  { to: '/app/my-activity', icon: History, label: 'My Activity' },
+  { to: '/app/settings', icon: Settings, label: 'Profile' },
 ]
 
 const staffLinks = [
-  { to: '/staff-dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/authorizations', icon: Key, label: 'Authorizations' },
-  { to: '/device-status', icon: Smartphone, label: 'Device Status' },
-  { to: '/settings', icon: Settings, label: 'Settings' },
+  { to: '/app/staff-dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/app/authorizations', icon: Key, label: 'Authorizations' },
+  { to: '/app/device-status', icon: Smartphone, label: 'Device Status' },
+  { to: '/app/settings', icon: Settings, label: 'Settings' },
 ]
 
 interface SidebarProps {
@@ -85,7 +85,7 @@ export function Sidebar({ onClose }: SidebarProps) {
           </div>
           <div>
             <h1 className="text-headline-sm font-headline-sm font-bold text-primary">OTP Relay</h1>
-            <p className="text-label-sm font-label-sm text-on-surface-variant">Government Portal</p>
+            <p className="text-label-sm font-label-sm text-on-surface-variant">Enterprise Platform</p>
           </div>
         </div>
         {/* Close button - mobile only */}

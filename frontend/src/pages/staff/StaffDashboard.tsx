@@ -1,14 +1,17 @@
-import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../services/api'
-import { Shield, Radio, Users, Smartphone, ArrowRight, CheckCircle, Wifi, Clock } from 'lucide-react'
+import { Shield, Radio, Users, Smartphone, ArrowRight, CheckCircle, Wifi, Clock, AlertTriangle, XCircle, Check, Ban } from 'lucide-react'
 
 interface RoutingInfo {
   id: string
   name: string
   sender_id: string | null
+  service_id: string | null
   operator_id: string
   priority: string
   is_active: boolean
+  authorization_status: string
 }
 
 interface SenderInfo {
@@ -20,6 +23,10 @@ interface SenderInfo {
 }
 
 export function StaffDashboard() {
+  const queryClient = useQueryClient()
+  const [rejectReason, setRejectReason] = useState('')
+  const [rejectingId, setRejectingId] = useState<string | null>(null)
+
   const { data: authorizations } = useQuery({
     queryKey: ['staff-authorizations'],
     queryFn: async () => { const r = await api.get('/api/staff/authorizations'); return r.data },
@@ -30,15 +37,26 @@ export function StaffDashboard() {
     queryFn: async () => { const r = await api.get('/api/admin/sender-ids'); return r.data },
   })
 
+  const { data: pendingRules } = useQuery<RoutingInfo[]>({
+    queryKey: ['staff-pending-rules'],
+    queryFn: async () => { const r = await api.get('/api/staff/pending-rules'); return r.data },
+  })
+
+  const authorizeRule = useMutation({
+    mutationFn: async ({ ruleId, action, reason }: { ruleId: string; action: string; reason?: string }) => {
+      const r = await api.post('/api/staff/authorize-rule', { rule_id: ruleId, action, rejection_reason: reason })
+      return r.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['staff-pending-rules'] })
+      queryClient.invalidateQueries({ queryKey: ['routing-rules'] })
+      setRejectingId(null)
+      setRejectReason('')
+    },
+  })
+
   const authorizedCount = authorizations?.filter((a: any) => a.status === 'AUTHORIZED').length || 0
   const totalCount = senders?.length || 0
-
-  // Sample routing info (in real app, this would come from API)
-  const routingInfo = [
-    { service: 'VBGRAMG', sender: 'BT-VBGRAM-G', operator: 'Amit Kumar', priority: 'High' },
-    { service: 'MKUBER', sender: 'AX-MKUBER-S', operator: 'Sunita Devi', priority: 'High' },
-    { service: 'NREGA', sender: 'JD-NREGA-D', operator: 'Amit Kumar', priority: 'Normal' },
-  ]
 
   return (
     <div className="space-y-6">
@@ -65,11 +83,82 @@ export function StaffDashboard() {
         />
         <StatusCard
           icon={<Radio className="w-5 h-5 text-tertiary-fixed-dim" />}
-          title="Active Routing"
-          value={`${routingInfo.length} rules`}
-          color="green"
+          title="Pending Rules"
+          value={`${pendingRules?.length || 0} pending`}
+          color={pendingRules?.length ? 'error' : 'green'}
         />
       </div>
+
+      {/* Pending Routing Rules - Authorization Required */}
+      {pendingRules && pendingRules.length > 0 && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl overflow-hidden">
+          <div className="p-4 border-b border-yellow-200 bg-yellow-100/50">
+            <h3 className="text-headline-sm font-headline-sm text-yellow-800 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" /> Pending Routing Authorizations ({pendingRules.length})
+            </h3>
+            <p className="text-body-md font-body-md text-yellow-700 mt-1">
+              These routing rules are waiting for your approval. OTPs will NOT be routed via these rules until you authorize them.
+            </p>
+          </div>
+          <div className="divide-y divide-yellow-200">
+            {pendingRules.map((rule) => (
+              <div key={rule.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-headline-sm font-headline-sm text-yellow-800">{rule.name}</span>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                      rule.priority === 'high' || rule.priority === 'critical' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
+                    }`}>{rule.priority.toUpperCase()}</span>
+                  </div>
+                  <p className="text-label-sm font-label-sm text-yellow-600 mt-1">
+                    Sender → Operator routing rule targeting you
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {rejectingId === rule.id ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        value={rejectReason}
+                        onChange={e => setRejectReason(e.target.value)}
+                        placeholder="Reason (optional)"
+                        className="px-3 py-1.5 bg-white border border-yellow-300 rounded text-sm text-primary w-40"
+                      />
+                      <button
+                        onClick={() => authorizeRule.mutate({ ruleId: rule.id, action: 'reject', reason: rejectReason })}
+                        className="px-3 py-1.5 bg-red-500 text-white rounded text-label-sm font-label-sm hover:bg-red-600"
+                      >
+                        Confirm Reject
+                      </button>
+                      <button
+                        onClick={() => { setRejectingId(null); setRejectReason('') }}
+                        className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded text-label-sm font-label-sm hover:bg-gray-300"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => authorizeRule.mutate({ ruleId: rule.id, action: 'authorize' })}
+                        disabled={authorizeRule.isPending}
+                        className="px-4 py-1.5 bg-green-600 text-white rounded text-label-sm font-label-sm hover:bg-green-700 flex items-center gap-1"
+                      >
+                        <Check className="w-4 h-4" /> Authorize
+                      </button>
+                      <button
+                        onClick={() => setRejectingId(rule.id)}
+                        className="px-4 py-1.5 bg-red-100 text-red-700 border border-red-200 rounded text-label-sm font-label-sm hover:bg-red-200 flex items-center gap-1"
+                      >
+                        <Ban className="w-4 h-4" /> Reject
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* OTP Routing Flow */}
       <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6">
@@ -108,59 +197,6 @@ export function StaffDashboard() {
         </div>
       </div>
 
-      {/* Routing Rules */}
-      <div className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden">
-        <div className="p-4 border-b border-outline-variant bg-surface-bright">
-          <h3 className="text-headline-sm font-headline-sm text-primary flex items-center gap-2">
-            <Users className="w-5 h-5" /> Active Routing Rules
-          </h3>
-          <p className="text-body-md font-body-md text-on-surface-variant mt-1">
-            Which operator receives OTPs from each service
-          </p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-surface-container-low text-label-sm font-label-sm text-on-surface-variant uppercase border-b border-outline-variant">
-              <tr>
-                <th className="px-4 py-3 font-semibold">Service</th>
-                <th className="px-4 py-3 font-semibold">Sender ID</th>
-                <th className="px-4 py-3 font-semibold text-center">Route To</th>
-                <th className="px-4 py-3 font-semibold">Priority</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-outline-variant text-mono-data font-mono-data">
-              {routingInfo.map((rule, i) => (
-                <tr key={i} className="hover:bg-surface-container transition-colors h-12">
-                  <td className="px-4 py-2">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-surface-container-high text-on-surface">
-                      {rule.service}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2 text-primary font-medium">{rule.sender}</td>
-                  <td className="px-4 py-2 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <ArrowRight className="w-4 h-4 text-tertiary-fixed-dim" />
-                      <span className="text-primary font-semibold">{rule.operator}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-2">
-                    <span className={`text-[11px] font-bold uppercase ${
-                      rule.priority === 'High' ? 'text-error' : 'text-on-surface-variant'
-                    }`}>{rule.priority}</span>
-                  </td>
-                  <td className="px-4 py-2">
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-tertiary-fixed-dim">
-                      <CheckCircle className="w-3 h-3" /> Active
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
       {/* Device Status */}
       <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5">
         <h3 className="text-headline-sm font-headline-sm text-primary mb-4 flex items-center gap-2">
@@ -181,7 +217,7 @@ export function StaffDashboard() {
           </div>
           <div>
             <p className="text-label-sm font-label-sm text-on-surface-variant">App Version</p>
-            <p className="text-body-md font-body-md text-primary font-semibold">1.0.0</p>
+            <p className="text-body-md font-body-md text-primary font-semibold">1.1.0</p>
           </div>
           <div>
             <p className="text-label-sm font-label-sm text-on-surface-variant">Android</p>

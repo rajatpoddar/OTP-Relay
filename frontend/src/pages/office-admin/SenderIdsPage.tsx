@@ -28,7 +28,7 @@ export function SenderIdsPage() {
     <div className="space-y-6">
       <div>
         <h2 className="text-display-md font-display-md text-primary">Sender IDs & Departments</h2>
-        <p className="text-body-md font-body-md text-on-surface-variant mt-1">Configure sender IDs, message templates, and government departments/services.</p>
+        <p className="text-body-md font-body-md text-on-surface-variant mt-1">Configure sender IDs, message templates, and departments/services.</p>
       </div>
 
       <div className="flex gap-2 border-b border-outline-variant">

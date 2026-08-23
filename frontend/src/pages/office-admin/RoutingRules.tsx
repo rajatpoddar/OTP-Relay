@@ -6,6 +6,8 @@ import { GitBranch, Plus, Edit2, Trash2, X, ToggleLeft, ToggleRight } from 'luci
 interface RoutingRule {
   id: string; name: string; sender_id: string | null; service_id: string | null;
   staff_id: string | null; operator_id: string; priority: string; is_active: boolean;
+  authorization_status: string; authorized_at: string | null; authorized_by: string | null;
+  rejection_reason: string | null;
   effective_from: string | null; effective_to: string | null; created_at: string;
 }
 
@@ -21,6 +23,7 @@ export function RoutingRules() {
 
   const { data: senders } = useQuery({ queryKey: ['admin-sender-ids'], queryFn: async () => { const r = await api.get('/api/admin/sender-ids'); return r.data } })
   const { data: operators } = useQuery({ queryKey: ['admin-operators'], queryFn: async () => { const r = await api.get('/api/admin/operators'); return r.data } })
+  const { data: staffList } = useQuery({ queryKey: ['admin-staff'], queryFn: async () => { const r = await api.get('/api/admin/staff'); return r.data } })
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => { const r = await api.post('/api/admin/routing-rules', data); return r.data },
@@ -51,7 +54,8 @@ export function RoutingRules() {
                 <th className="px-4 py-3 font-semibold">Sender</th>
                 <th className="px-4 py-3 font-semibold">Operator</th>
                 <th className="px-4 py-3 font-semibold">Priority</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
+                <th className="px-4 py-3 font-semibold">Active</th>
+                <th className="px-4 py-3 font-semibold">Staff Auth</th>
                 <th className="px-4 py-3 font-semibold text-right">Actions</th>
               </tr>
             </thead>
@@ -64,15 +68,34 @@ export function RoutingRules() {
                   <td className="px-4 py-2"><span className={`text-[11px] font-bold uppercase ${rule.priority === 'high' ? 'text-error' : rule.priority === 'critical' ? 'text-error' : 'text-on-surface-variant'}`}>{rule.priority}</span></td>
                   <td className="px-4 py-2">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold ${rule.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                      {rule.is_active ? 'ACTIVE' : 'INACTIVE'}
+                      {rule.is_active ? 'ON' : 'OFF'}
                     </span>
+                  </td>
+                  <td className="px-4 py-2">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold ${
+                      rule.authorization_status === 'AUTHORIZED' ? 'bg-green-100 text-green-800' :
+                      rule.authorization_status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                      rule.authorization_status === 'REJECTED' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {rule.authorization_status === 'AUTHORIZED' ? '✓ AUTHORIZED' :
+                       rule.authorization_status === 'PENDING' ? '⏳ PENDING' :
+                       rule.authorization_status === 'REJECTED' ? '✗ REJECTED' :
+                       rule.authorization_status}
+                    </span>
+                    {rule.rejection_reason && (
+                      <p className="text-[10px] text-error mt-0.5 truncate max-w-[120px]" title={rule.rejection_reason}>{rule.rejection_reason}</p>
+                    )}
+                    {!rule.staff_id && (
+                      <span className="text-[10px] text-on-surface-variant">No staff specified</span>
+                    )}
                   </td>
                   <td className="px-4 py-2 text-right">
                     <button onClick={() => { setEditing(rule); setShowForm(true) }} className="p-1 text-on-surface-variant hover:text-primary transition-colors"><Edit2 className="w-4 h-4" /></button>
                   </td>
                 </tr>
               ))}
-              {(!rules || rules.length === 0) && <tr><td colSpan={6} className="px-4 py-8 text-center text-on-surface-variant">No routing rules configured</td></tr>}
+              {(!rules || rules.length === 0) && <tr><td colSpan={7} className="px-4 py-8 text-center text-on-surface-variant">No routing rules configured</td></tr>}
             </tbody>
           </table>
         </div>
@@ -89,6 +112,7 @@ export function RoutingRules() {
               initial={editing}
               senders={senders || []}
               operators={operators || []}
+              staffList={staffList || []}
               onSave={(data: any) => createMutation.mutate(data)}
               loading={createMutation.isPending}
             />
@@ -99,10 +123,11 @@ export function RoutingRules() {
   )
 }
 
-function RoutingRuleForm({ initial, senders, operators, onSave, loading }: any) {
+function RoutingRuleForm({ initial, senders, operators, staffList, onSave, loading }: any) {
   const [name, setName] = useState(initial?.name || '')
   const [senderId, setSenderId] = useState(initial?.sender_id || '')
   const [operatorId, setOperatorId] = useState(initial?.operator_id || '')
+  const [staffId, setStaffId] = useState(initial?.staff_id || '')
   const [priority, setPriority] = useState(initial?.priority || 'normal')
 
   return (
@@ -127,17 +152,31 @@ function RoutingRuleForm({ initial, senders, operators, onSave, loading }: any) 
           </select>
         </div>
       </div>
-      <div>
-        <label className="block text-label-sm font-label-sm text-on-surface-variant uppercase mb-2">Priority</label>
-        <select value={priority} onChange={e => setPriority(e.target.value)} className="w-full px-4 py-3 bg-surface border border-outline-variant rounded-lg text-body-md font-body-md text-primary focus:outline-none focus:ring-2 focus:ring-primary">
-          <option value="low">Low</option>
-          <option value="normal">Normal</option>
-          <option value="high">High</option>
-          <option value="critical">Critical</option>
-        </select>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-label-sm font-label-sm text-on-surface-variant uppercase mb-2">Priority</label>
+          <select value={priority} onChange={e => setPriority(e.target.value)} className="w-full px-4 py-3 bg-surface border border-outline-variant rounded-lg text-body-md font-body-md text-primary focus:outline-none focus:ring-2 focus:ring-primary">
+            <option value="low">Low</option>
+            <option value="normal">Normal</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-label-sm font-label-sm text-on-surface-variant uppercase mb-2">Target Staff (Optional)</label>
+          <select value={staffId} onChange={e => setStaffId(e.target.value)} className="w-full px-4 py-3 bg-surface border border-outline-variant rounded-lg text-body-md font-body-md text-primary focus:outline-none focus:ring-2 focus:ring-primary">
+            <option value="">All Staff (No Auth Needed)</option>
+            {staffList.map((s: any) => <option key={s.id} value={s.id}>{s.full_name}</option>)}
+          </select>
+        </div>
       </div>
+      {staffId && (
+        <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p className="text-label-sm font-label-sm text-yellow-800">⚠️ This rule targets a specific staff member and will remain <strong>PENDING</strong> until the staff member authorizes it. OTPs will not be routed via this rule until authorized.</p>
+        </div>
+      )}
       <div className="flex gap-3 mt-6">
-        <button onClick={() => name && operatorId && onSave({ name, sender_id: senderId || null, operator_id: operatorId, priority })} disabled={!name || !operatorId || loading} className="flex-1 py-3 bg-primary text-on-primary rounded-lg text-label-sm font-label-sm hover:bg-inverse-surface transition-colors disabled:opacity-50">{loading ? 'Saving...' : 'Save Rule'}</button>
+        <button onClick={() => name && operatorId && onSave({ name, sender_id: senderId || null, operator_id: operatorId, staff_id: staffId || null, priority })} disabled={!name || !operatorId || loading} className="flex-1 py-3 bg-primary text-on-primary rounded-lg text-label-sm font-label-sm hover:bg-inverse-surface transition-colors disabled:opacity-50">{loading ? 'Saving...' : 'Save Rule'}</button>
       </div>
     </div>
   )

@@ -30,7 +30,7 @@ export function LoginPage() {
             <Shield className="w-8 h-8" />
           </div>
           <h1 className="text-display-md font-display-md text-primary">OTP Relay</h1>
-          <p className="text-body-lg font-body-lg text-on-surface-variant mt-2">Government Portal</p>
+          <p className="text-body-lg font-body-lg text-on-surface-variant mt-2">Enterprise Platform</p>
         </div>
 
         <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-8">
