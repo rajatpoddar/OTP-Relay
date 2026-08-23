@@ -64,6 +64,12 @@
 # ---- Broadcast Receiver ----
 -keep class com.otprelay.receiver.** { *; }
 
+# ---- Foreground Service ----
+-keep class com.otprelay.service.** { *; }
+
+# ---- Update Manager ----
+-keep class com.otprelay.util.UpdateManager { *; }
+
 # ---- Kotlin Coroutines ----
 -keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
 -keepnames class kotlinx.coroutines.CoroutineExceptionHandler {}

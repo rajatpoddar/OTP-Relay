@@ -27,18 +27,18 @@ import java.io.File
  */
 class UpdateManager(private val context: Context) {
 
+    // Callback interface
+    interface UpdateCallback {
+        fun onUpdateAvailable(version: AppVersionResponse, isForceUpdate: Boolean)
+        fun onNoUpdate()
+        fun onDownloadComplete(filePath: String)
+        fun onDownloadFailed(error: String)
+        fun onInstallPrompt(filePath: String)
+    }
+
     companion object {
         private const val TAG = "UpdateManager"
         private const val CURRENT_VERSION = "1.0.0" // Should match build.gradle versionName
-        
-        // Callback interface
-        interface UpdateCallback {
-            fun onUpdateAvailable(version: AppVersionResponse, isForceUpdate: Boolean)
-            fun onNoUpdate()
-            fun onDownloadComplete(filePath: String)
-            fun onDownloadFailed(error: String)
-            fun onInstallPrompt(filePath: String)
-        }
     }
 
     private var downloadId: Long = -1
