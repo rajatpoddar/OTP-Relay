@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import { LoginPage } from './pages/LoginPage'
+import { LandingPage } from './pages/LandingPage'
 import { DashboardLayout } from './components/layout/DashboardLayout'
 
 // Super Admin
@@ -40,9 +41,10 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute'
 function App() {
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-        <Route index element={<Navigate to="/dashboard" replace />} />
+      <Route path="/app" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+        <Route index element={<Navigate to="/app/dashboard" replace />} />
         <Route path="dashboard" element={<RoleBasedDashboard />} />
 
         {/* Office Admin routes */}
@@ -74,6 +76,7 @@ function App() {
         {/* Role-based Settings */}
         <Route path="settings" element={<RoleBasedSettings />} />
       </Route>
+      <Route path="/app/*" element={<Navigate to="/app" replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

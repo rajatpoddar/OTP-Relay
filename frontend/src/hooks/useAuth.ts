@@ -28,7 +28,7 @@ export function useAuth() {
     localStorage.setItem('refresh_token', data.refresh_token)
     localStorage.setItem('user', JSON.stringify(data.user))
     setUser(data.user)
-    navigate('/dashboard')
+    navigate('/app/dashboard')
   }, [navigate])
 
   const logout = useCallback(() => {
