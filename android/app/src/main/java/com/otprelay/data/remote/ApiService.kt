@@ -17,6 +17,9 @@ interface ApiService {
     suspend fun getCurrentUser(): Response<UserInfo>
 
     // Device
+    @POST("api/device/register-staff")
+    suspend fun registerDeviceForStaff(@Body request: DeviceRegisterRequest): Response<DeviceResponse>
+
     @POST("api/device/register")
     suspend fun registerDevice(@Body request: DeviceRegisterRequest): Response<DeviceResponse>
 

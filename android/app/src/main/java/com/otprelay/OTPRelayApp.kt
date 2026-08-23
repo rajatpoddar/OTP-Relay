@@ -83,12 +83,69 @@ class OTPRelayApp : Application(), Configuration.Provider {
                 if (isActivated) {
                     Log.d(TAG, "User activated - starting foreground service")
                     RelayForegroundService.start(this@OTPRelayApp)
+                    // Register device on every app start (handles auto-login path too)
+                    registerDeviceIfNeeded()
                 } else {
                     Log.d(TAG, "User not activated - foreground service will start after login")
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to check activation state", e)
             }
+        }
+    }
+
+    /**
+     * Register device with server on every app start.
+     * This ensures device is always registered even on auto-login path.
+     */
+    private suspend fun registerDeviceIfNeeded() {
+        try {
+            var deviceId = preferencesManager.deviceId.first()
+            if (deviceId == null) {
+                deviceId = java.util.UUID.randomUUID().toString()
+                preferencesManager.saveDeviceId(deviceId)
+            }
+            // Try staff registration first (JWT-based, no activation code needed)
+            try {
+                val staffResponse = apiService.registerDeviceForStaff(
+                    com.otprelay.data.model.DeviceRegisterRequest(
+                        device_id = deviceId,
+                        activation_code = "STAFF",
+                        model = android.os.Build.MODEL,
+                        android_version = android.os.Build.VERSION.RELEASE,
+                        app_version = "1.0.0"
+                    )
+                )
+                if (staffResponse.isSuccessful) {
+                    Log.d(TAG, "✅ Device registered via staff auth: $deviceId")
+                    return
+                } else {
+                    Log.w(TAG, "Staff registration returned ${staffResponse.code()}")
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Staff registration failed: ${e.message}")
+            }
+            // Fallback to activation code registration
+            try {
+                val fallbackResponse = apiService.registerDevice(
+                    com.otprelay.data.model.DeviceRegisterRequest(
+                        device_id = deviceId,
+                        activation_code = "DEFAULT",
+                        model = android.os.Build.MODEL,
+                        android_version = android.os.Build.VERSION.RELEASE,
+                        app_version = "1.0.0"
+                    )
+                )
+                if (fallbackResponse.isSuccessful) {
+                    Log.d(TAG, "✅ Device registered via activation code: $deviceId")
+                } else {
+                    Log.w(TAG, "Activation code registration returned ${fallbackResponse.code()}")
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Activation code registration failed: ${e.message}")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Device registration error: ${e.message}")
         }
     }
 

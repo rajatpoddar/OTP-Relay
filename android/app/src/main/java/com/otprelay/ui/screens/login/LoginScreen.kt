@@ -162,25 +162,59 @@ fun LoginScreen(
                             // Mark as activated (persists across app restarts)
                             app.preferencesManager.setActivated(true)
 
-                            // Register device with server
+                            // Register device with server using staff JWT auth (no activation code needed)
                             try {
                                 var deviceId = app.preferencesManager.deviceId.first()
                                 if (deviceId == null) {
                                     deviceId = java.util.UUID.randomUUID().toString()
                                     app.preferencesManager.saveDeviceId(deviceId)
                                 }
-                                app.apiService.registerDevice(
-                                    DeviceRegisterRequest(
-                                        device_id = deviceId,
-                                        activation_code = "DEFAULT",
-                                        model = Build.MODEL,
-                                        android_version = Build.VERSION.RELEASE,
-                                        app_version = "1.0.0"
+                                // Try staff registration first (JWT-based, no activation code)
+                                try {
+                                    val staffRegResponse = app.apiService.registerDeviceForStaff(
+                                        DeviceRegisterRequest(
+                                            device_id = deviceId,
+                                            activation_code = "STAFF",
+                                            model = Build.MODEL,
+                                            android_version = Build.VERSION.RELEASE,
+                                            app_version = "1.0.0"
+                                        )
                                     )
-                                )
-                                Log.d("LoginScreen", "Device registered: $deviceId")
+                                    if (staffRegResponse.isSuccessful) {
+                                        Log.d("LoginScreen", "Device registered via staff auth: $deviceId")
+                                    } else {
+                                        Log.w("LoginScreen", "Staff registration failed: ${staffRegResponse.code()} ${staffRegResponse.message()}")
+                                        // Fallback to activation code registration
+                                        app.apiService.registerDevice(
+                                            DeviceRegisterRequest(
+                                                device_id = deviceId,
+                                                activation_code = "DEFAULT",
+                                                model = Build.MODEL,
+                                                android_version = Build.VERSION.RELEASE,
+                                                app_version = "1.0.0"
+                                            )
+                                        )
+                                        Log.d("LoginScreen", "Device registered via activation code: $deviceId")
+                                    }
+                                } catch (e: Exception) {
+                                    Log.w("LoginScreen", "Staff registration failed, trying activation: ${e.message}")
+                                    try {
+                                        app.apiService.registerDevice(
+                                            DeviceRegisterRequest(
+                                                device_id = deviceId,
+                                                activation_code = "DEFAULT",
+                                                model = Build.MODEL,
+                                                android_version = Build.VERSION.RELEASE,
+                                                app_version = "1.0.0"
+                                            )
+                                        )
+                                        Log.d("LoginScreen", "Device registered via activation code: $deviceId")
+                                    } catch (e2: Exception) {
+                                        Log.e("LoginScreen", "ALL device registration methods failed: ${e2.message}")
+                                    }
+                                }
                             } catch (e: Exception) {
-                                Log.w("LoginScreen", "Device registration failed (non-fatal): ${e.message}")
+                                Log.e("LoginScreen", "Device registration error: ${e.message}")
                             }
 
                             // Sync authorized senders from server

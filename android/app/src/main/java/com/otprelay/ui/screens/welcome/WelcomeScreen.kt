@@ -20,7 +20,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun WelcomeScreen(
     onNavigateToLogin: () -> Unit,
-    onNavigateToDashboard: (() -> Unit)? = null
+    onNavigateToDashboard: (() -> Unit)? = null,
+    onNavigateToPermissions: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -36,7 +37,7 @@ fun WelcomeScreen(
             val userId = prefs.userId.first()
 
             if (isActivated && hasToken != null && userId != null) {
-                Log.d("WelcomeScreen", "Auth state found, redirecting to Dashboard")
+                Log.d("WelcomeScreen", "Auth state found, redirecting")
                 
                 // ⚡ START FOREGROUND SERVICE: Ensure service is running on auto-login
                 try {
@@ -46,7 +47,8 @@ fun WelcomeScreen(
                     Log.w("WelcomeScreen", "Failed to start foreground service: ${e.message}")
                 }
                 
-                onNavigateToDashboard?.invoke()
+                // Go to permissions check first, then dashboard
+                onNavigateToPermissions?.invoke() ?: onNavigateToDashboard?.invoke()
                 return@LaunchedEffect
             }
         } catch (e: Exception) {

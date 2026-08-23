@@ -1,13 +1,18 @@
 package com.otprelay.ui.screens.settings
 
+import android.app.ActivityManager
+import android.content.Context
 import android.os.Build
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -89,72 +94,131 @@ fun SettingsScreen(
             }
 
             // Service Status
-            var isServiceRunning by remember { mutableStateOf(false) }
-            LaunchedEffect(Unit) {
-                // Simple check - in real app you'd use a proper service binding
-                isServiceRunning = true // Assume running if app is alive
+            fun isServiceRunning(context: Context): Boolean {
+                val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+                @Suppress("DEPRECATION")
+                for (service in manager.getRunningServices(Int.MAX_VALUE)) {
+                    if (RelayForegroundService::class.java.name == service.service.className) {
+                        return true
+                    }
+                }
+                return false
             }
+            var isServiceRunning by remember { mutableStateOf(isServiceRunning(context)) }
             
             Card(
                 modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = if (isServiceRunning) 
-                        MaterialTheme.colorScheme.primaryContainer 
-                    else 
-                        MaterialTheme.colorScheme.errorContainer
-                )
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
                 ) {
+                    // Status indicator row
                     Row(
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
+                        // Status dot
+                        Box(
+                            modifier = Modifier
+                                .size(12.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(
+                                    if (isServiceRunning) 
+                                        MaterialTheme.colorScheme.primary 
+                                    else 
+                                        MaterialTheme.colorScheme.error
+                                )
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "OTP Relay Service",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            )
+                            Text(
+                                text = if (isServiceRunning) "Running" else "Stopped",
+                                fontSize = 13.sp,
+                                color = if (isServiceRunning) 
+                                    MaterialTheme.colorScheme.primary 
+                                else 
+                                    MaterialTheme.colorScheme.error
+                            )
+                        }
                         Icon(
                             if (isServiceRunning) Icons.Default.CheckCircle else Icons.Default.Error,
                             contentDescription = null,
                             tint = if (isServiceRunning) 
-                                MaterialTheme.colorScheme.tertiary 
+                                MaterialTheme.colorScheme.primary 
                             else 
-                                MaterialTheme.colorScheme.error
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = if (isServiceRunning) "Service Running" else "Service Stopped",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
+                                MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(28.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    // Description
                     Text(
                         text = if (isServiceRunning) 
-                            "OTP Relay is monitoring SMS in background. Phone locked or in pocket - OTP will be captured."
+                            "Monitoring SMS in background. OTPs will be captured even when phone is locked."
                         else 
-                            "Service is not running. Start it to capture OTPs.",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                            "Start the service to begin capturing OTPs automatically.",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 18.sp
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Action buttons
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Button(
                             onClick = {
                                 RelayForegroundService.start(context)
                                 isServiceRunning = true
                             },
+                            modifier = Modifier.weight(1f),
+                            enabled = !isServiceRunning,
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.primary
                             )
                         ) {
+                            Icon(
+                                Icons.Default.PlayArrow,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
                             Text("Start Service")
                         }
                         OutlinedButton(
                             onClick = {
                                 RelayForegroundService.stop(context)
                                 isServiceRunning = false
-                            }
+                            },
+                            modifier = Modifier.weight(1f),
+                            enabled = isServiceRunning,
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            )
                         ) {
+                            Icon(
+                                Icons.Default.Stop,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
                             Text("Stop Service")
                         }
                     }

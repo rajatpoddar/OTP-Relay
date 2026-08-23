@@ -229,6 +229,67 @@ async def reactivate_device(
 
 # --- Device Self-Service APIs ---
 
+@router.post("/device/register-staff", response_model=DeviceResponse)
+async def register_device_for_staff(
+    request: DeviceRegisterRequest,
+    tenant: TenantContextResult = Depends(get_tenant_context),
+):
+    """Register device for staff user (no activation code needed). Uses JWT auth."""
+    db = tenant.db
+
+    # Find staff profile
+    result = await db.execute(
+        select(Staff).where(
+            Staff.user_id == tenant.user_id,
+            Staff.organization_id == tenant.organization_id,
+        )
+    )
+    staff = result.scalar_one_or_none()
+    if not staff:
+        raise HTTPException(status_code=404, detail="Staff profile not found")
+
+    # Check if device already registered by this device_id
+    existing = await db.execute(select(Device).where(Device.device_id == request.device_id))
+    if existing.scalar_one_or_none():
+        device = existing.scalar_one_or_none()
+        # Update device info
+        device.model = request.model or device.model
+        device.android_version = request.android_version or device.android_version
+        device.app_version = request.app_version or device.app_version
+        device.status = DeviceStatus.ACTIVE
+        device.last_seen_at = datetime.now(timezone.utc)
+        db.add(device)
+        await db.flush()
+        return DeviceResponse.model_validate(device)
+
+    device = Device(
+        device_id=request.device_id,
+        staff_id=staff.id,
+        organization_id=tenant.organization_id,
+        model=request.model,
+        android_version=request.android_version,
+        app_version=request.app_version,
+        status=DeviceStatus.ACTIVE,
+    )
+    db.add(device)
+    await db.flush()
+
+    # Audit log
+    from app.models.audit import AuditLog
+    audit = AuditLog(
+        organization_id=tenant.organization_id,
+        user_id=tenant.user_id,
+        action="device_registered",
+        entity_type="device",
+        entity_id=device.id,
+        details=f"Device {request.device_id} registered via staff login",
+    )
+    db.add(audit)
+    await db.flush()
+
+    return DeviceResponse.model_validate(device)
+
+
 @router.post("/device/register", response_model=DeviceResponse)
 async def register_device(
     request: DeviceRegisterRequest,
@@ -277,12 +338,32 @@ async def register_device(
 @router.post("/device/heartbeat")
 async def device_heartbeat(
     request: DeviceHeartbeatRequest,
-    db: AsyncSession = Depends(get_db),
+    tenant: TenantContextResult = Depends(get_tenant_context),
 ):
+    db = tenant.db
     result = await db.execute(select(Device).where(Device.device_id == request.device_id))
     device = result.scalar_one_or_none()
+    
+    # Auto-register device if not found
     if not device:
-        raise HTTPException(status_code=404, detail="Device not found")
+        staff_result = await db.execute(
+            select(Staff).where(
+                Staff.user_id == tenant.user_id,
+                Staff.organization_id == tenant.organization_id,
+            )
+        )
+        staff = staff_result.scalar_one_or_none()
+        if not staff:
+            raise HTTPException(status_code=404, detail="Staff profile not found")
+        
+        device = Device(
+            device_id=request.device_id,
+            staff_id=staff.id,
+            organization_id=tenant.organization_id,
+            status=DeviceStatus.ACTIVE,
+        )
+        db.add(device)
+        await db.flush()
 
     if device.status == DeviceStatus.REVOKED:
         raise HTTPException(status_code=403, detail="Device has been revoked")
@@ -296,12 +377,45 @@ async def device_heartbeat(
 @router.post("/device/sync")
 async def device_sync(
     request: DeviceSyncRequest,
-    db: AsyncSession = Depends(get_db),
+    tenant: TenantContextResult = Depends(get_tenant_context),
 ):
+    db = tenant.db
     result = await db.execute(select(Device).where(Device.device_id == request.device_id))
     device = result.scalar_one_or_none()
+    
+    # Auto-register device if not found (handles registration failures gracefully)
     if not device:
-        raise HTTPException(status_code=404, detail="Device not found")
+        # Find staff profile for this user
+        staff_result = await db.execute(
+            select(Staff).where(
+                Staff.user_id == tenant.user_id,
+                Staff.organization_id == tenant.organization_id,
+            )
+        )
+        staff = staff_result.scalar_one_or_none()
+        if not staff:
+            raise HTTPException(status_code=404, detail="Staff profile not found")
+        
+        device = Device(
+            device_id=request.device_id,
+            staff_id=staff.id,
+            organization_id=tenant.organization_id,
+            status=DeviceStatus.ACTIVE,
+        )
+        db.add(device)
+        await db.flush()
+        
+        from app.models.audit import AuditLog
+        audit = AuditLog(
+            organization_id=tenant.organization_id,
+            user_id=tenant.user_id,
+            action="device_auto_registered",
+            entity_type="device",
+            entity_id=device.id,
+            details=f"Device {request.device_id} auto-registered during sync",
+        )
+        db.add(audit)
+        await db.flush()
 
     if device.status == DeviceStatus.REVOKED:
         raise HTTPException(status_code=403, detail="Device has been revoked")

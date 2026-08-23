@@ -9,12 +9,14 @@ import com.otprelay.ui.screens.activity.OtpActivityScreen
 import com.otprelay.ui.screens.authorizations.AuthorizationsScreen
 import com.otprelay.ui.screens.dashboard.DashboardScreen
 import com.otprelay.ui.screens.login.LoginScreen
+import com.otprelay.ui.screens.permissions.PermissionsScreen
 import com.otprelay.ui.screens.settings.SettingsScreen
 import com.otprelay.ui.screens.welcome.WelcomeScreen
 
 sealed class Screen(val route: String) {
     object Welcome : Screen("welcome")
     object Login : Screen("login")
+    object Permissions : Screen("permissions")
     object Dashboard : Screen("dashboard")
     object Authorizations : Screen("authorizations")
     object Activity : Screen("activity")
@@ -41,6 +43,11 @@ fun OTPRelayNavGraph(
                     navController.navigate(Screen.Dashboard.route) {
                         popUpTo(Screen.Welcome.route) { inclusive = true }
                     }
+                },
+                onNavigateToPermissions = {
+                    navController.navigate(Screen.Permissions.route) {
+                        popUpTo(Screen.Welcome.route) { inclusive = true }
+                    }
                 }
             )
         }
@@ -48,8 +55,18 @@ fun OTPRelayNavGraph(
         composable(Screen.Login.route) {
             LoginScreen(
                 onLoginSuccess = {
-                    navController.navigate(Screen.Dashboard.route) {
+                    navController.navigate(Screen.Permissions.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(Screen.Permissions.route) {
+            PermissionsScreen(
+                onAllPermissionsGranted = {
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(Screen.Permissions.route) { inclusive = true }
                     }
                 }
             )

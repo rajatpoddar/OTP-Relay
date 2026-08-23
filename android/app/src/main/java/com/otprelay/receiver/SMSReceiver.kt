@@ -55,8 +55,17 @@ class SMSReceiver : BroadcastReceiver() {
                 }
 
                 if (authorizedSenders.isEmpty()) {
-                    Log.d(TAG, "No authorized senders configured, ignoring SMS")
+                    Log.w(TAG, "⚠️ No authorized senders configured in local DB! SMS will be ignored.")
+                    Log.w(TAG, "Check: 1) Login successful? 2) getSenderIds API returned data? 3) Server has sender IDs configured?")
+                    for (sms in messages) {
+                        Log.d(TAG, "  Ignored SMS from: ${sms.displayOriginatingAddress} (no senders configured)")
+                    }
                     return@launch
+                }
+
+                Log.d(TAG, "📋 Authorized senders count: ${authorizedSenders.size}")
+                for (sender in authorizedSenders) {
+                    Log.d(TAG, "  - ${sender.senderId} (${sender.displayName})")
                 }
 
                 for (sms in messages) {
@@ -64,11 +73,13 @@ class SMSReceiver : BroadcastReceiver() {
                     val messageBody = sms.messageBody ?: continue
 
                     Log.d(TAG, "SMS received from: $senderId")
+                    Log.d(TAG, "Message preview: ${messageBody.take(80)}...")
 
                     val authorizedSender = OtpExtractor.findAuthorizedSender(senderId, authorizedSenders)
 
                     if (authorizedSender == null) {
-                        Log.d(TAG, "Sender not authorized: $senderId - ignoring")
+                        Log.w(TAG, "❌ Sender NOT authorized: '$senderId' - ignoring")
+                        Log.w(TAG, "   Authorized sender IDs: ${authorizedSenders.map { it.senderId }.joinToString()}")
                         continue
                     }
 
@@ -107,8 +118,10 @@ class SMSReceiver : BroadcastReceiver() {
 
                 // ⚡ IMMEDIATE SYNC: If OTP was captured, sync to server right now
                 if (otpCaptured) {
-                    Log.d(TAG, "OTP captured - triggering immediate sync to server")
+                    Log.d(TAG, "✅ OTP captured - triggering immediate sync to server")
                     syncOtpImmediately(context, app)
+                } else {
+                    Log.w(TAG, "⚠️ SMS received but no OTP extracted - check sender config and OTP patterns")
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error processing SMS", e)
@@ -126,8 +139,8 @@ class SMSReceiver : BroadcastReceiver() {
         try {
             val deviceId = app.preferencesManager.deviceId.first()
             if (deviceId == null) {
-                Log.w(TAG, "Device not registered, cannot sync immediately")
-                // Try to start foreground service which will handle sync later
+                Log.e(TAG, "❌ Device NOT registered (no device_id in preferences)! Cannot sync.")
+                Log.e(TAG, "   This means device registration failed during login.")
                 try {
                     RelayForegroundService.start(context)
                 } catch (e: Exception) {
@@ -135,6 +148,7 @@ class SMSReceiver : BroadcastReceiver() {
                 }
                 return
             }
+            Log.d(TAG, "Device ID: $deviceId")
 
             // Get all pending OTPs
             val pendingOtps = app.database.pendingOtpDao().getPendingOtps().first()
@@ -164,9 +178,10 @@ class SMSReceiver : BroadcastReceiver() {
                     if (response.isSuccessful) {
                         app.database.pendingOtpDao().markSynced(otp.id)
                         successCount++
-                        Log.d(TAG, "OTP synced immediately: ${otp.senderId}")
+                        Log.d(TAG, "✅ OTP synced immediately: ${otp.senderId}")
                     } else {
-                        Log.w(TAG, "Failed to sync OTP: ${response.code()}")
+                        val errorBody = response.errorBody()?.string() ?: response.message()
+                        Log.e(TAG, "❌ Failed to sync OTP: HTTP ${response.code()} - $errorBody")
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error syncing OTP immediately", e)
