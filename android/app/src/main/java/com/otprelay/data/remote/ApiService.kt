@@ -53,4 +53,8 @@ interface ApiService {
     // App Version
     @GET("api/super-admin/app-versions")
     suspend fun getAppVersions(): Response<List<AppVersionResponse>>
+
+    // Public update check (no auth required)
+    @GET("api/public/app-version/latest")
+    suspend fun getLatestVersion(): Response<LatestVersionResponse>
 }

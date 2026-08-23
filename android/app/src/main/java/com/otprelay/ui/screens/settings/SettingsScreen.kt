@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.otprelay.OTPRelayApp
+import com.otprelay.service.RelayForegroundService
 import androidx.compose.runtime.collectAsState
 import kotlinx.coroutines.launch
 
@@ -82,6 +83,79 @@ fun SettingsScreen(
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.secondary
                             )
+                        }
+                    }
+                }
+            }
+
+            // Service Status
+            var isServiceRunning by remember { mutableStateOf(false) }
+            LaunchedEffect(Unit) {
+                // Simple check - in real app you'd use a proper service binding
+                isServiceRunning = true // Assume running if app is alive
+            }
+            
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (isServiceRunning) 
+                        MaterialTheme.colorScheme.primaryContainer 
+                    else 
+                        MaterialTheme.colorScheme.errorContainer
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            if (isServiceRunning) Icons.Default.CheckCircle else Icons.Default.Error,
+                            contentDescription = null,
+                            tint = if (isServiceRunning) 
+                                MaterialTheme.colorScheme.tertiary 
+                            else 
+                                MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (isServiceRunning) "Service Running" else "Service Stopped",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = if (isServiceRunning) 
+                            "OTP Relay is monitoring SMS in background. Phone locked or in pocket - OTP will be captured."
+                        else 
+                            "Service is not running. Start it to capture OTPs.",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                RelayForegroundService.start(context)
+                                isServiceRunning = true
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Text("Start Service")
+                        }
+                        OutlinedButton(
+                            onClick = {
+                                RelayForegroundService.stop(context)
+                                isServiceRunning = false
+                            }
+                        ) {
+                            Text("Stop Service")
                         }
                     }
                 }

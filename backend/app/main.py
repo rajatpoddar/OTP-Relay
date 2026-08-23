@@ -20,6 +20,7 @@ from app.api.v1.audit import router as audit_router
 from app.api.v1.reports import router as reports_router
 from app.api.v1.websocket import router as ws_router
 from app.api.v1.staff_operator import router as staff_operator_router
+from app.api.v1.uploads import router as uploads_router
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -56,6 +57,15 @@ app.include_router(audit_router)
 app.include_router(reports_router)
 app.include_router(ws_router)
 app.include_router(staff_operator_router)
+app.include_router(uploads_router)
+
+# Serve uploaded files (APK downloads)
+from fastapi.staticfiles import StaticFiles
+import os
+
+uploads_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+if os.path.exists(uploads_dir):
+    app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 
 
 @app.get("/")

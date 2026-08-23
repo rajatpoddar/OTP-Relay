@@ -127,3 +127,13 @@ data class AppVersionResponse(
     val is_active: Boolean,
     val created_at: String?
 )
+
+// Public version check response (no auth required)
+data class LatestVersionResponse(
+    val version: String,
+    val force_update: Boolean,
+    val release_notes: String?,
+    val download_url: String?,
+    val minimum_supported_version: String?,
+    val is_update_available: Boolean
+)

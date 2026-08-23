@@ -299,3 +299,57 @@ async def get_my_subscription(
             "device_count": device_count,
         },
     }
+
+
+# --- Public: App Version Check (No Auth Required) ---
+
+@router.get("/public/app-version/latest")
+async def get_latest_version(
+    current_version: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+):
+    """Check for latest app version (public endpoint, no auth required)."""
+    result = await db.execute(
+        select(AppVersion)
+        .where(AppVersion.is_active == True)
+        .order_by(AppVersion.created_at.desc())
+        .limit(1)
+    )
+    version = result.scalar_one_or_none()
+    
+    if not version:
+        return {
+            "version": None,
+            "force_update": False,
+            "release_notes": None,
+            "download_url": None,
+            "minimum_supported_version": None,
+            "is_update_available": False,
+        }
+    
+    # Check if update is available
+    is_update_available = False
+    if current_version and version.version:
+        try:
+            current_parts = current_version.split(".")
+            latest_parts = version.version.split(".")
+            
+            # Pad with zeros
+            max_len = max(len(current_parts), len(latest_parts))
+            current_padded = [int(x) for x in current_parts] + [0] * (max_len - len(current_parts))
+            latest_padded = [int(x) for x in latest_parts] + [0] * (max_len - len(latest_parts))
+            
+            is_update_available = latest_padded > current_padded
+        except (ValueError, AttributeError):
+            is_update_available = True
+    else:
+        is_update_available = True
+    
+    return {
+        "version": version.version,
+        "force_update": version.force_update,
+        "release_notes": version.release_notes,
+        "download_url": version.download_url,
+        "minimum_supported_version": version.minimum_supported_version,
+        "is_update_available": is_update_available,
+    }

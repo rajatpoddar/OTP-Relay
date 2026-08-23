@@ -37,6 +37,15 @@ fun WelcomeScreen(
 
             if (isActivated && hasToken != null && userId != null) {
                 Log.d("WelcomeScreen", "Auth state found, redirecting to Dashboard")
+                
+                // ⚡ START FOREGROUND SERVICE: Ensure service is running on auto-login
+                try {
+                    com.otprelay.service.RelayForegroundService.start(context)
+                    Log.d("WelcomeScreen", "Foreground service started on auto-login")
+                } catch (e: Exception) {
+                    Log.w("WelcomeScreen", "Failed to start foreground service: ${e.message}")
+                }
+                
                 onNavigateToDashboard?.invoke()
                 return@LaunchedEffect
             }

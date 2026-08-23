@@ -207,6 +207,14 @@ fun LoginScreen(
                                 Log.w("LoginScreen", "Sender sync failed (non-fatal): ${e.message}")
                             }
 
+                            // ⚡ START FOREGROUND SERVICE: Keep app alive 24/7
+                            try {
+                                app.startServiceAfterLogin()
+                                Log.d("LoginScreen", "Foreground service started after login")
+                            } catch (e: Exception) {
+                                Log.w("LoginScreen", "Failed to start foreground service (non-fatal): ${e.message}")
+                            }
+
                             onLoginSuccess()
                         } else {
                             error = "Invalid email or password"

@@ -18,6 +18,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.otprelay.OTPRelayApp
 import com.otprelay.data.local.PendingOtp
+import com.otprelay.ui.components.UpdateDialog
+import com.otprelay.ui.components.InstallDialog
 import com.otprelay.util.OtpExtractor
 import kotlinx.coroutines.flow.flowOf
 import java.text.SimpleDateFormat
@@ -50,6 +52,63 @@ fun DashboardScreen(
         } catch (e: Exception) {
             Log.e("DashboardScreen", "Failed to get pending count", e)
         }
+    }
+
+    // Update dialog state
+    val updateInfo by app.availableUpdate.collectAsState()
+    var showUpdateDialog by remember { mutableStateOf(false) }
+    var isDownloading by remember { mutableStateOf(false) }
+    var downloadProgress by remember { mutableIntStateOf(0) }
+    var downloadedFilePath by remember { mutableStateOf<String?>(null) }
+    var showInstallDialog by remember { mutableStateOf(false) }
+
+    // Show update dialog when update is available
+    LaunchedEffect(updateInfo) {
+        if (updateInfo != null) {
+            showUpdateDialog = true
+        }
+    }
+
+    // Update Dialog
+    if (showUpdateDialog && updateInfo != null) {
+        UpdateDialog(
+            version = updateInfo!!.version,
+            releaseNotes = updateInfo!!.releaseNotes,
+            isForceUpdate = updateInfo!!.isForceUpdate,
+            isDownloading = isDownloading,
+            downloadProgress = downloadProgress,
+            onUpdateClick = {
+                isDownloading = true
+                val url = updateInfo!!.downloadUrl
+                if (url != null) {
+                    app.updateManager.downloadApk(url)
+                }
+            },
+            onSkipClick = {
+                showUpdateDialog = false
+                app.clearUpdateNotification()
+            },
+            onDismiss = {
+                if (!updateInfo!!.isForceUpdate) {
+                    showUpdateDialog = false
+                    app.clearUpdateNotification()
+                }
+            }
+        )
+    }
+
+    // Install Dialog
+    if (showInstallDialog && downloadedFilePath != null) {
+        InstallDialog(
+            version = updateInfo?.version ?: "unknown",
+            onInstallClick = {
+                app.updateManager.installApk(downloadedFilePath!!)
+                showInstallDialog = false
+            },
+            onDismiss = {
+                showInstallDialog = false
+            }
+        )
     }
 
     Scaffold(
@@ -91,7 +150,7 @@ fun DashboardScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "System Online",
+                                text = "OTP Relay Active",
                                 color = MaterialTheme.colorScheme.onPrimary,
                                 fontWeight = FontWeight.Bold
                             )
@@ -100,7 +159,17 @@ fun DashboardScreen(
                         Spacer(modifier = Modifier.height(8.dp))
 
                         Text(
+                            text = "Service: Running in background",
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontSize = 14.sp
+                        )
+                        Text(
                             text = "Pending sync: $pendingCount OTPs",
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            text = "SMS monitoring: Active",
                             color = MaterialTheme.colorScheme.onPrimary,
                             fontSize = 14.sp
                         )

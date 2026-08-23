@@ -6,12 +6,12 @@ import android.app.NotificationManager
 import android.os.Build
 import android.util.Log
 import androidx.work.Configuration
-import androidx.work.WorkManager
 import com.otprelay.data.local.AppDatabase
 import com.otprelay.data.remote.ApiClient
 import com.otprelay.data.remote.ApiService
+import com.otprelay.service.RelayForegroundService
 import com.otprelay.util.PreferencesManager
-import com.otprelay.worker.SyncWorker
+import com.otprelay.util.UpdateManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -49,6 +49,15 @@ class OTPRelayApp : Application(), Configuration.Provider {
         }
     }
 
+    val updateManager by lazy {
+        try {
+            UpdateManager(this)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to initialize update manager", e)
+            throw e
+        }
+    }
+
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
             .setMinimumLoggingLevel(Log.INFO)
@@ -56,17 +65,41 @@ class OTPRelayApp : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
-        createNotificationChannel()
+        createNotificationChannels()
         restoreApiToken()
-        startSyncWorker()
+        startForegroundServiceIfNeeded()
+        checkForUpdates()
     }
 
-    private fun startSyncWorker() {
+    /**
+     * Start foreground service if user is already activated.
+     * This ensures the service runs even if app is not in foreground.
+     */
+    private fun startForegroundServiceIfNeeded() {
+        applicationScope.launch {
+            try {
+                val isActivated = preferencesManager.isActivated.first()
+                if (isActivated) {
+                    Log.d(TAG, "User activated - starting foreground service")
+                    RelayForegroundService.start(this@OTPRelayApp)
+                } else {
+                    Log.d(TAG, "User not activated - foreground service will start after login")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to check activation state", e)
+            }
+        }
+    }
+
+    /**
+     * Called after successful login to start the foreground service.
+     */
+    fun startServiceAfterLogin() {
         try {
-            SyncWorker.enqueue(this)
-            Log.d(TAG, "SyncWorker enqueued")
+            RelayForegroundService.start(this)
+            Log.d(TAG, "Foreground service started after login")
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to enqueue SyncWorker", e)
+            Log.e(TAG, "Failed to start foreground service after login", e)
         }
     }
 
@@ -83,10 +116,56 @@ class OTPRelayApp : Application(), Configuration.Provider {
         }
     }
 
-    private fun createNotificationChannel() {
+    /**
+     * Check for app updates on launch.
+     * This runs silently in the background.
+     */
+    private fun checkForUpdates() {
+        applicationScope.launch {
+            try {
+                delay(3000) // Wait for app to fully initialize
+                
+                updateManager.checkForUpdates(object : UpdateManager.UpdateCallback {
+                    override fun onUpdateAvailable(version: com.otprelay.data.model.AppVersionResponse, isForceUpdate: Boolean) {
+                        Log.d(TAG, "Update available: ${version.version}")
+                        // Store update info for UI to pick up
+                        _availableUpdate.value = UpdateInfo(
+                            version = version.version,
+                            releaseNotes = version.release_notes,
+                            downloadUrl = version.download_url,
+                            isForceUpdate = isForceUpdate
+                        )
+                    }
+                    
+                    override fun onNoUpdate() {
+                        Log.d(TAG, "App is up to date")
+                    }
+                    
+                    override fun onDownloadComplete(filePath: String) {
+                        Log.d(TAG, "Update downloaded: $filePath")
+                    }
+                    
+                    override fun onDownloadFailed(error: String) {
+                        Log.e(TAG, "Update download failed: $error")
+                    }
+                    
+                    override fun onInstallPrompt(filePath: String) {
+                        Log.d(TAG, "Update ready to install: $filePath")
+                    }
+                })
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to check for updates", e)
+            }
+        }
+    }
+
+    private fun createNotificationChannels() {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val channel = NotificationChannel(
+                val notificationManager = getSystemService(NotificationManager::class.java)
+
+                // Channel 1: OTP Notifications (high priority)
+                val otpChannel = NotificationChannel(
                     CHANNEL_ID,
                     "OTP Notifications",
                     NotificationManager.IMPORTANCE_HIGH
@@ -94,17 +173,42 @@ class OTPRelayApp : Application(), Configuration.Provider {
                     description = "Notifications for new OTP messages"
                     enableVibration(true)
                 }
+                notificationManager.createNotificationChannel(otpChannel)
 
-                val notificationManager = getSystemService(NotificationManager::class.java)
-                notificationManager.createNotificationChannel(channel)
+                // Channel 2: Service Status (low priority)
+                val serviceChannel = NotificationChannel(
+                    SERVICE_CHANNEL_ID,
+                    "Service Status",
+                    NotificationManager.IMPORTANCE_LOW
+                ).apply {
+                    description = "Background service status"
+                    setShowBadge(false)
+                }
+                notificationManager.createNotificationChannel(serviceChannel)
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to create notification channel", e)
+            Log.e(TAG, "Failed to create notification channels", e)
         }
     }
+
+    // Observable update state for UI
+    private val _availableUpdate = kotlinx.coroutines.flow.MutableStateFlow<UpdateInfo?>(null)
+    val availableUpdate: kotlinx.coroutines.flow.StateFlow<UpdateInfo?> = _availableUpdate
+    
+    fun clearUpdateNotification() {
+        _availableUpdate.value = null
+    }
+    
+    data class UpdateInfo(
+        val version: String,
+        val releaseNotes: String?,
+        val downloadUrl: String?,
+        val isForceUpdate: Boolean
+    )
 
     companion object {
         const val TAG = "OTPRelayApp"
         const val CHANNEL_ID = "otp_notifications"
+        const val SERVICE_CHANNEL_ID = "relay_service_channel"
     }
 }
