@@ -30,6 +30,37 @@ fun AuthorizationsScreen(
 
     val senders by app.database.authorizedSenderDao().getAllSenders().collectAsState(initial = emptyList())
     var isLoading by remember { mutableStateOf(false) }
+    var isSyncing by remember { mutableStateOf(false) }
+
+    // Sync authorized senders from server on load
+    LaunchedEffect(Unit) {
+        isSyncing = true
+        try {
+            val response = app.apiService.getMySenders()
+            if (response.isSuccessful) {
+                val mySenders = response.body() ?: emptyList()
+                // Clear and re-sync only authorized senders
+                app.database.authorizedSenderDao().deleteAll()
+                val senders = mySenders.map { sender ->
+                    com.otprelay.data.local.AuthorizedSender(
+                        senderId = sender.sender_id,
+                        displayName = sender.display_name,
+                        serviceCode = sender.display_name,
+                        otpLength = sender.otp_length,
+                        extractionRegex = sender.extraction_regex,
+                        isAuthorized = sender.is_authorized
+                    )
+                }
+                if (senders.isNotEmpty()) {
+                    app.database.authorizedSenderDao().insertSenders(senders)
+                }
+            }
+        } catch (e: Exception) {
+            Log.w("Authorizations", "Sync failed: ${e.message}")
+        } finally {
+            isSyncing = false
+        }
+    }
 
     Scaffold(
         topBar = {

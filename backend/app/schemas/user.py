@@ -37,16 +37,17 @@ class UserResponse(BaseModel):
 
 
 class StaffCreate(BaseModel):
-    user_id: UUID
     staff_id_number: Optional[str] = None
     full_name: str
     mobile_number: str
+    designation: Optional[str] = None
     department_id: Optional[UUID] = None
 
 
 class StaffUpdate(BaseModel):
     full_name: Optional[str] = None
     mobile_number: Optional[str] = None
+    designation: Optional[str] = None
     department_id: Optional[UUID] = None
     is_active: Optional[bool] = None
 
@@ -58,8 +59,10 @@ class StaffResponse(BaseModel):
     staff_id_number: Optional[str] = None
     full_name: str
     mobile_number: str
+    designation: Optional[str] = None
     department_id: Optional[UUID] = None
     is_active: bool
+    profile_completed: bool = False
     created_at: datetime
 
     class Config:

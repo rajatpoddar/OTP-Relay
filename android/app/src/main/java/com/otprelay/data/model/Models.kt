@@ -126,6 +126,18 @@ data class AuthorizeResponse(
     val created_at: String
 )
 
+// My Authorized Senders (staff-specific)
+data class MySenderResponse(
+    val sender_id: String,
+    val display_name: String?,
+    val otp_length: Int,
+    val extraction_regex: String?,
+    val message_template: String?,
+    val purpose_regex: String?,
+    val reference_regex: String?,
+    val is_authorized: Boolean
+)
+
 // Sender IDs
 data class SenderIdResponse(
     val id: String,

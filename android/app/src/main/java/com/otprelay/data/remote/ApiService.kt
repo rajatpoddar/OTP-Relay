@@ -59,6 +59,9 @@ interface ApiService {
     @GET("api/staff/authorizations")
     suspend fun getAuthorizations(): Response<List<AuthorizeResponse>>
 
+    @GET("api/staff/my-senders")
+    suspend fun getMySenders(): Response<List<MySenderResponse>>
+
     // Sender IDs
     @GET("api/admin/sender-ids")
     suspend fun getSenderIds(): Response<List<SenderIdResponse>>

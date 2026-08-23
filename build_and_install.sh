@@ -51,6 +51,11 @@ if [ ! -f "$APK_PATH" ]; then
     exit 1
 fi
 
+# Rename APK to proper name
+FINAL_APK="app/build/outputs/apk/debug/otp-relay.apk"
+mv "$APK_PATH" "$FINAL_APK"
+APK_PATH="$FINAL_APK"
+
 echo "✅ Build successful! APK ready: $ANDROID_DIR/$APK_PATH"
 echo ""
 

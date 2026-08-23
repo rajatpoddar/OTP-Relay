@@ -330,6 +330,51 @@ async def list_my_authorizations(
     return [StaffAuthResponse.model_validate(a) for a in result.scalars().all()]
 
 
+@router.get("/staff/my-senders")
+async def list_my_authorized_senders(
+    tenant: TenantContextResult = Depends(get_tenant_context),
+):
+    """Return the staff's authorized sender IDs with full sender details.
+    Used by Android app to sync only authorized senders to local DB."""
+    from app.models.staff_operator import Staff
+    from app.models.routing import AuthStatus
+
+    staff = await tenant.db.execute(
+        select(Staff).where(
+            Staff.user_id == tenant.user_id,
+            Staff.organization_id == tenant.organization_id,
+        )
+    )
+    staff_obj = staff.scalar_one_or_none()
+    if not staff_obj:
+        raise HTTPException(status_code=404, detail="Staff profile not found")
+
+    # Get authorized sender IDs for this staff
+    auth_result = await tenant.db.execute(
+        select(StaffSenderAuthorization, SenderId).join(
+            SenderId, StaffSenderAuthorization.sender_id == SenderId.id
+        ).where(
+            StaffSenderAuthorization.staff_id == staff_obj.id,
+            StaffSenderAuthorization.status == AuthStatus.AUTHORIZED,
+        )
+    )
+    rows = auth_result.all()
+
+    return [
+        {
+            "sender_id": sender.sender_id,
+            "display_name": sender.display_name,
+            "otp_length": sender.otp_length,
+            "extraction_regex": sender.extraction_regex,
+            "message_template": sender.message_template,
+            "purpose_regex": sender.purpose_regex,
+            "reference_regex": sender.reference_regex,
+            "is_authorized": True,
+        }
+        for auth, sender in rows
+    ]
+
+
 # --- Routing Rule Authorization (Staff) ---
 
 class RoutingRuleAuthorizeRequest(PydanticBaseModel):

@@ -52,8 +52,10 @@ export interface Staff {
   staff_id_number: string | null
   full_name: string
   mobile_number: string
+  designation: string | null
   department_id: string | null
   is_active: boolean
+  profile_completed: boolean
   created_at: string
 }
 

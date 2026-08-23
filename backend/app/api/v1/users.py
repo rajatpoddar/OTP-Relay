@@ -56,6 +56,7 @@ async def create_staff(
         staff_id_number=request.staff_id_number,
         full_name=request.full_name,
         mobile_number=request.mobile_number,
+        designation=request.designation,
         department_id=request.department_id,
     )
     tenant.db.add(staff)

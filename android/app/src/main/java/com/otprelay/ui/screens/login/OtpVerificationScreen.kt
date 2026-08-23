@@ -214,9 +214,9 @@ fun OtpVerificationScreen(
                                 Log.e("OtpVerification", "Device registration error: ${e.message}")
                             }
 
-                            // Sync authorized senders
+                            // Sync only this staff's authorized senders
                             try {
-                                val senderResponse = app.apiService.getSenderIds()
+                                val senderResponse = app.apiService.getMySenders()
                                 if (senderResponse.isSuccessful) {
                                     val senders = senderResponse.body()?.map { sender ->
                                         com.otprelay.data.local.AuthorizedSender(
@@ -224,14 +224,15 @@ fun OtpVerificationScreen(
                                             displayName = sender.display_name,
                                             serviceCode = sender.display_name,
                                             otpLength = sender.otp_length,
-                                            extractionRegex = null,
-                                            isAuthorized = true
+                                            extractionRegex = sender.extraction_regex,
+                                            isAuthorized = sender.is_authorized
                                         )
                                     } ?: emptyList()
+                                    app.database.authorizedSenderDao().deleteAll()
                                     if (senders.isNotEmpty()) {
-                                        app.database.authorizedSenderDao().deleteAll()
                                         app.database.authorizedSenderDao().insertSenders(senders)
                                     }
+                                    Log.d("OtpVerification", "Synced ${senders.size} authorized senders")
                                 }
                             } catch (e: Exception) {
                                 Log.w("OtpVerification", "Sender sync failed: ${e.message}")
