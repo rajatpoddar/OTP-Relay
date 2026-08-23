@@ -148,48 +148,57 @@ fun OnboardingScreen(
 
         // Sender ID selection
         if (senderIds.isNotEmpty()) {
-            Text(
-                text = "Select Authorized Sender IDs",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Choose the sender IDs you want to relay OTPs for:",
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            senderIds.forEach { senderId ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Checkbox(
-                        checked = senderId in selectedSenders,
-                        onCheckedChange = { checked ->
-                            selectedSenders = if (checked) {
-                                selectedSenders + senderId
-                            } else {
-                                selectedSenders - senderId
-                            }
-                        }
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = senderId,
-                        fontSize = 14.sp,
+                        text = "Select Authorized Sender IDs",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = "Choose the sender IDs you want to relay OTPs for:",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    senderIds.forEach { senderId ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = senderId in selectedSenders,
+                                onCheckedChange = { checked ->
+                                    selectedSenders = if (checked) {
+                                        selectedSenders + senderId
+                                    } else {
+                                        selectedSenders - senderId
+                                    }
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = senderId,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
                 }
             }
         }

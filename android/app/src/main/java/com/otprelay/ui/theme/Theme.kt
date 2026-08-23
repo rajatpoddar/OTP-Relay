@@ -24,8 +24,8 @@ private val OnSecondaryContainer = Color(0xFF4648D4)
 
 // Surface & Background
 private val Surface = Color(0xFFF8FAFC)
-private val OnSurface = Color(0xFF1E293B)
-private val OnSurfaceVariant = Color(0xFF64748B)
+private val OnSurface = Color(0xFF0F172A)
+private val OnSurfaceVariant = Color(0xFF475569)
 
 // Outline
 private val Outline = Color(0xFF94A3B8)
