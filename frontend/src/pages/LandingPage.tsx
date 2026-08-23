@@ -147,7 +147,7 @@ export function LandingPage() {
                     </div>
                     <p className="font-body-md text-on-background mb-3">Service: VBGRAMG<br />Purpose: FTO Login<br />Reference: 000*<br />OTP: 980847</p>
                     <div className="flex gap-2">
-                      <span className="px-2 py-1 bg-surface-container text-on-surface text-xs rounded truncate">Jharkhand → Deoghar → Palojori → Palojori Block Office</span>
+                      <span className="px-2 py-1 bg-surface-container text-on-surface text-xs rounded truncate">State → District → Block → Office</span>
                       <span className="px-2 py-1 bg-surface-container-highest text-on-surface text-xs rounded">Auto-Routed</span>
                     </div>
                   </div>

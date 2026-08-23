@@ -42,7 +42,7 @@ export function StaffSettings() {
           <SettingsRow
             icon={<Building2 className="w-5 h-5" />}
             label="Organization"
-            value="Palojori Block Office"
+            value="Your Organization"
           />
           <SettingsRow
             icon={<Shield className="w-5 h-5" />}

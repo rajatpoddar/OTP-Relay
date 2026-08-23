@@ -38,7 +38,7 @@ export function OfficeAdminSettings() {
           icon={<Building2 className="w-5 h-5" />}
           title="Organization"
           description="Office name, location, and hierarchy"
-          value="Palojori Block Office"
+          value="Your Organization"
         />
         <SettingsCard
           icon={<Key className="w-5 h-5" />}

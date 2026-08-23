@@ -37,7 +37,7 @@ export function OperatorProfile() {
         <div className="space-y-3 border-t border-outline-variant pt-4">
           <InfoRow icon={<User className="w-4 h-4" />} label="Role" value="Operator" />
           <InfoRow icon={<Mail className="w-4 h-4" />} label="Email" value={user?.email || '—'} />
-          <InfoRow icon={<Shield className="w-4 h-4" />} label="Organization" value="Palojori Block Office" />
+          <InfoRow icon={<Shield className="w-4 h-4" />} label="Organization" value="Your Organization" />
         </div>
       </div>
 
