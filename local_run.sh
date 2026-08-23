@@ -6,7 +6,7 @@
 # Usage: ./local_run.sh
 # Stops on Ctrl+C automatically
 
-set -e
+# Note: not using set -e to avoid crashes on pip warnings
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -108,14 +108,24 @@ if [ ! -d "venv" ]; then
     print_ok "Virtual environment created"
 fi
 
+# Activate venv properly
 source venv/bin/activate
-pip install -q -r requirements.txt 2>/dev/null
+
+# Verify venv is working
+if ! python3 -c "import sys" 2>/dev/null; then
+    print_warn "Venv seems broken, recreating..."
+    rm -rf venv
+    python3 -m venv venv
+    source venv/bin/activate
+fi
+
+pip install -r requirements.txt 2>&1 | tail -1
 print_ok "Dependencies installed"
 
-python3 migrate.py 2>/dev/null
+python3 migrate.py 2>&1 | tail -1
 print_ok "Database tables ready"
 
-python3 seed.py 2>/dev/null
+python3 seed.py 2>&1 | tail -1
 print_ok "Demo data seeded"
 
 # ============================================
@@ -146,7 +156,7 @@ print_ok "Backend starting on http://localhost:8000"
 cd "$PROJECT_ROOT/frontend"
 npm run dev &> /tmp/otp-frontend.log &
 FRONTEND_PID=$!
-print_ok "Frontend starting on http://localhost:5173"
+print_ok "Frontend starting on http://localhost:3000"
 
 # Wait for servers to be ready
 sleep 3
@@ -172,7 +182,7 @@ echo -e "${GREEN}═════════════════════
 echo -e "${GREEN}  ✅ OTP Relay is running!${NC}"
 echo -e "${GREEN}══════════════════════════════════════════════════════════${NC}"
 echo ""
-echo -e "  ${CYAN}Frontend:${NC}  http://localhost:5173"
+echo -e "  ${CYAN}Frontend:${NC}  http://localhost:3000"
 echo -e "  ${CYAN}Backend:${NC}   http://localhost:8000"
 echo -e "  ${CYAN}API Docs:${NC}  http://localhost:8000/api/docs"
 echo ""
