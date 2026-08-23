@@ -76,6 +76,10 @@ class SenderIdResponse(BaseModel):
     sender_id: str
     display_name: Optional[str] = None
     otp_length: int
+    extraction_regex: Optional[str] = None
+    message_template: Optional[str] = None
+    purpose_regex: Optional[str] = None
+    reference_regex: Optional[str] = None
     is_active: bool
     created_at: datetime
 

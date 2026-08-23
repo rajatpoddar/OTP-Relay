@@ -11,6 +11,7 @@ import com.otprelay.data.local.AppDatabase
 import com.otprelay.data.remote.ApiClient
 import com.otprelay.data.remote.ApiService
 import com.otprelay.util.PreferencesManager
+import com.otprelay.worker.SyncWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -57,6 +58,16 @@ class OTPRelayApp : Application(), Configuration.Provider {
         super.onCreate()
         createNotificationChannel()
         restoreApiToken()
+        startSyncWorker()
+    }
+
+    private fun startSyncWorker() {
+        try {
+            SyncWorker.enqueue(this)
+            Log.d(TAG, "SyncWorker enqueued")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to enqueue SyncWorker", e)
+        }
     }
 
     private fun restoreApiToken() {

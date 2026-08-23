@@ -11,6 +11,8 @@ from app.models.device_service import SenderId
 from app.models.routing import RoutingRule, StaffSenderAuthorization, AuthStatus
 from app.models.staff_operator import Operator, Staff, StaffOperatorOtpPreference
 from app.models.audit import AuditLog
+from app.api.v1.websocket import broadcast_new_otp
+from app.schemas.otp import OtpResponse
 
 
 # Priority order for routing
@@ -78,7 +80,7 @@ class OTPService:
                 return duplicate
 
         # Step 5: Create OTP record with expiry
-        expiry_minutes = 10  # Default
+        expiry_minutes = 5  # OTPs valid for 5 minutes
         if sender and sender.message_template:
             pass
 
@@ -111,6 +113,24 @@ class OTPService:
                 otp.delivered_at = datetime.now(timezone.utc)
                 self.db.add(otp)
                 await self.db.flush()
+
+                # Broadcast real-time OTP to operator via WebSocket
+                try:
+                    otp_data = {
+                        "id": str(otp.id),
+                        "sender_text": otp.sender_text,
+                        "service_name": otp.service_name,
+                        "otp_value": otp.otp_value,
+                        "otp_length": otp.otp_length,
+                        "purpose": otp.purpose,
+                        "reference_number": otp.reference_number,
+                        "status": otp.status.value,
+                        "received_at": otp.received_at.isoformat() if otp.received_at else None,
+                        "expiry_at": otp.expiry_at.isoformat() if otp.expiry_at else None,
+                    }
+                    await broadcast_new_otp(str(organization_id), otp_data)
+                except Exception:
+                    pass  # WebSocket broadcast is best-effort
             elif delivery_result == "blocked":
                 # OTP record stays with status=RECEIVED; blocked event logged below
                 pass
