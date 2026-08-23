@@ -48,8 +48,16 @@ echo ""
 echo "🔨 Running gradle clean build..."
 echo ""
 
-cd "$ANDROID_DIR"
-$GRADLE clean assembleDebug 2>&1 | tail -5
+cd "$ANDROID_DIR" || { echo "❌ Cannot cd to $ANDROID_DIR"; exit 1; }
+
+if [ ! -f "./gradlew" ]; then
+    echo "❌ gradlew not found in $ANDROID_DIR"
+    echo "   Contents: $(ls -la)"
+    exit 1
+fi
+
+chmod +x ./gradlew
+./gradlew clean assembleDebug 2>&1 | tail -10
 
 APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
 
