@@ -10,26 +10,45 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-// Colors matching the Stitch design system
+// Primary - Navy (same as web)
 private val Primary = Color(0xFF0F172A)
 private val OnPrimary = Color(0xFFFFFFFF)
-private val PrimaryContainer = Color(0xFF131B2E)
+private val PrimaryContainer = Color(0xFFE8EAF6)
+private val OnPrimaryContainer = Color(0xFF0F172A)
+
+// Secondary - Indigo (same as web)
 private val Secondary = Color(0xFF4648D4)
-private val SecondaryContainer = Color(0xFF6063EE)
-private val Surface = Color(0xFFF8F9FF)
-private val OnSurface = Color(0xFF0B1C30)
-private val OnSurfaceVariant = Color(0xFF45464D)
-private val Outline = Color(0xFF76777D)
-private val OutlineVariant = Color(0xFFC6C6CD)
-private val Error = Color(0xFFBA1A1A)
-private val ErrorContainer = Color(0xFFFFDAD6)
+private val OnSecondary = Color(0xFFFFFFFF)
+private val SecondaryContainer = Color(0xFFE8E9FD)
+private val OnSecondaryContainer = Color(0xFF4648D4)
+
+// Surface & Background
+private val Surface = Color(0xFFF8FAFC)
+private val OnSurface = Color(0xFF1E293B)
+private val OnSurfaceVariant = Color(0xFF64748B)
+
+// Outline
+private val Outline = Color(0xFF94A3B8)
+private val OutlineVariant = Color(0xFFE2E8F0)
+
+// Error
+private val Error = Color(0xFFDC2626)
+private val ErrorContainer = Color(0xFFFEE2E2)
+private val OnError = Color(0xFFFFFFFF)
+
+// Tertiary - Green for success states
+private val Tertiary = Color(0xFF16A34A)
+private val TertiaryContainer = Color(0xFFDCFCE7)
 
 private val LightColorScheme = lightColorScheme(
     primary = Primary,
     onPrimary = OnPrimary,
     primaryContainer = PrimaryContainer,
+    onPrimaryContainer = OnPrimaryContainer,
     secondary = Secondary,
+    onSecondary = OnSecondary,
     secondaryContainer = SecondaryContainer,
+    onSecondaryContainer = OnSecondaryContainer,
     surface = Surface,
     onSurface = OnSurface,
     onSurfaceVariant = OnSurfaceVariant,
@@ -37,6 +56,9 @@ private val LightColorScheme = lightColorScheme(
     outlineVariant = OutlineVariant,
     error = Error,
     errorContainer = ErrorContainer,
+    onError = OnError,
+    tertiary = Tertiary,
+    tertiaryContainer = TertiaryContainer,
 )
 
 @Composable

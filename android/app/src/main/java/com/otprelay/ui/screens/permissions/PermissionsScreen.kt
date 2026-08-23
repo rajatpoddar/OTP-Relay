@@ -40,6 +40,13 @@ fun PermissionsScreen(
     var notificationPermissionGranted by remember { mutableStateOf(hasNotificationPermission(context)) }
     var batteryOptimizationDisabled by remember { mutableStateOf(isBatteryOptimizationDisabled(context)) }
 
+    // Re-check battery optimization when screen resumes
+    LaunchedEffect(Unit) {
+        // Small delay to allow settings to apply
+        kotlinx.coroutines.delay(500)
+        batteryOptimizationDisabled = isBatteryOptimizationDisabled(context)
+    }
+
     val allGranted = smsPermissionGranted && notificationPermissionGranted && batteryOptimizationDisabled
 
     // SMS permission launcher
@@ -49,7 +56,6 @@ fun PermissionsScreen(
         val allSmsGranted = permissions.values.all { it }
         smsPermissionGranted = allSmsGranted
         if (allSmsGranted) {
-            // Try to also start the service
             try {
                 RelayForegroundService.start(context)
             } catch (_: Exception) {}
@@ -61,6 +67,14 @@ fun PermissionsScreen(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted ->
         notificationPermissionGranted = granted
+    }
+
+    // Battery optimization launcher - re-check when returning
+    val batteryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) {
+        // Re-check when returning from settings
+        batteryOptimizationDisabled = isBatteryOptimizationDisabled(context)
     }
 
     // Auto-proceed when all permissions granted
@@ -159,31 +173,53 @@ fun PermissionsScreen(
                 icon = Icons.Default.BatteryStd,
                 isGranted = batteryOptimizationDisabled,
                 onClick = {
-                    val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                        data = Uri.parse("package:${context.packageName}")
+                    try {
+                        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                            data = Uri.parse("package:${context.packageName}")
+                        }
+                        batteryLauncher.launch(intent)
+                    } catch (e: Exception) {
+                        // Fallback: open battery optimization settings directly
+                        try {
+                            val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                            batteryLauncher.launch(intent)
+                        } catch (_: Exception) {
+                            // If all else fails, just mark as done
+                            batteryOptimizationDisabled = true
+                        }
                     }
-                    context.startActivity(intent)
                 }
             )
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Skip button (goes to dashboard anyway)
-            OutlinedButton(
+            // Continue button (always visible)
+            Button(
                 onClick = onAllPermissionsGranted,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (allGranted) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.secondary
+                )
             ) {
-                Text("Skip for now")
+                Text(
+                    if (allGranted) "Continue" else "Skip for now",
+                    fontWeight = FontWeight.Bold
+                )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "You can grant permissions later from Settings.\nSMS permission is required for OTP capture to work.",
+                text = if (allGranted) "All permissions granted!"
+                else "You can grant permissions later from Settings.\nSMS permission is required for OTP capture.",
                 fontSize = 12.sp,
                 textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = if (allGranted) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.onSurfaceVariant
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
