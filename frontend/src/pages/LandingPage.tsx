@@ -65,26 +65,107 @@ export function LandingPage() {
 
       <main className="pt-14">
         {/* Hero */}
-        <section className="max-w-6xl mx-auto px-6 py-20 md:py-28">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 bg-green-50 text-green-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-6 border border-green-100">
-              <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-              Live in government offices across India
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight mb-5">
-              Officers in the field.<br />
-              OTPs stuck on their phones.
-            </h1>
-            <p className="text-lg text-gray-500 mb-8 leading-relaxed max-w-lg">
-              OTP Relay detects government OTPs on staff phones and routes them instantly to the operator dashboard. No more phone calls. No more delays.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Link to="/login" className="inline-flex items-center justify-center gap-2 bg-gray-900 text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors">
-                Open Dashboard <ArrowRight className="w-4 h-4" />
-              </Link>
-              <a href={APK} download className="inline-flex items-center justify-center gap-2 border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors">
-                <Download className="w-4 h-4" /> Download Android App
-              </a>
+        <section className="relative overflow-hidden">
+          {/* Subtle background pattern */}
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-white to-indigo-50/30"></div>
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-100/40 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+          
+          <div className="relative max-w-6xl mx-auto px-6 py-20 md:py-28">
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              {/* Left: Content */}
+              <div>
+                <div className="inline-flex items-center gap-2 bg-green-50 text-green-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-6 border border-green-100">
+                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                  Live in government offices across India
+                </div>
+                <h1 className="text-4xl md:text-[2.75rem] font-bold text-gray-900 leading-[1.15] mb-5">
+                  Officers in the field.<br />
+                  <span className="text-indigo-600">OTPs stuck</span> on their phones.
+                </h1>
+                <p className="text-lg text-gray-500 mb-8 leading-relaxed max-w-md">
+                  Detects government OTPs on staff phones and routes them instantly to the operator dashboard.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 mb-8">
+                  <Link to="/login" className="inline-flex items-center justify-center gap-2 bg-gray-900 text-white px-6 py-3.5 rounded-lg font-medium hover:bg-gray-800 transition-all hover:shadow-lg">
+                    Open Dashboard <ArrowRight className="w-4 h-4" />
+                  </Link>
+                  <a href={APK} download className="inline-flex items-center justify-center gap-2 border border-gray-300 text-gray-700 px-6 py-3.5 rounded-lg font-medium hover:bg-white hover:border-gray-400 hover:shadow-sm transition-all">
+                    <Download className="w-4 h-4" /> Download Android App
+                  </a>
+                </div>
+                {/* Trust indicators */}
+                <div className="flex items-center gap-6 text-xs text-gray-400">
+                  <div className="flex items-center gap-1.5">
+                    <Shield className="w-3.5 h-3.5" /> End-to-end encrypted
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle className="w-3.5 h-3.5" /> Full audit trail
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5" /> Setup in 30 min
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Live preview card */}
+              <div className="hidden lg:block relative">
+                {/* Glow behind card */}
+                <div className="absolute -inset-4 bg-indigo-100/50 rounded-2xl blur-xl"></div>
+                
+                <div className="relative bg-white rounded-2xl border border-gray-200 shadow-xl p-5">
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center">
+                        <img src="/logo.png" alt="" className="w-4 h-4 rounded" />
+                      </div>
+                      <span className="text-xs font-semibold text-gray-700">OTP Relay Dashboard</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-green-600">
+                      <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                      <span className="text-xs font-medium">Live</span>
+                    </div>
+                  </div>
+
+                  {/* OTP Card */}
+                  <div className="bg-gray-900 rounded-xl p-5 mb-3">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Sender</p>
+                        <p className="text-sm font-semibold text-white">BT-VBGRAM-G</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Service</p>
+                        <p className="text-sm font-semibold text-white">VBGRAMG</p>
+                      </div>
+                    </div>
+                    <div className="text-center py-4">
+                      <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-2">OTP Code</p>
+                      <p className="text-4xl font-mono font-bold text-white tracking-[0.25em]">980847</p>
+                    </div>
+                    <div className="flex justify-between items-center text-xs text-gray-500 mt-2">
+                      <span>Ref: 000*</span>
+                      <span>Expires in 4:52</span>
+                    </div>
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <button className="py-2 bg-gray-900 text-white text-xs font-medium rounded-lg">
+                      Copy OTP
+                    </button>
+                    <button className="py-2 bg-gray-100 text-gray-700 text-xs font-medium rounded-lg">
+                      Mark Used
+                    </button>
+                  </div>
+
+                  {/* Status bar */}
+                  <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
+                    <CheckCircle className="w-3.5 h-3.5 text-green-500" />
+                    <span>Auto-routed from Rajesh Kumar's device</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
