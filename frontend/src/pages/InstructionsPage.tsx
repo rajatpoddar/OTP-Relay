@@ -146,6 +146,12 @@ const faqs = [
 
 export function InstructionsPage() {
   const APK_DOWNLOAD_URL = useApkUrl()
+
+  // Scroll to top when page loads
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
+
   return (
     <div className="min-h-screen bg-surface">
       {/* Header */}
