@@ -9,6 +9,8 @@ import com.otprelay.ui.screens.activity.OtpActivityScreen
 import com.otprelay.ui.screens.authorizations.AuthorizationsScreen
 import com.otprelay.ui.screens.dashboard.DashboardScreen
 import com.otprelay.ui.screens.login.LoginScreen
+import com.otprelay.ui.screens.login.OtpVerificationScreen
+import com.otprelay.ui.screens.login.OnboardingScreen
 import com.otprelay.ui.screens.permissions.PermissionsScreen
 import com.otprelay.ui.screens.settings.SettingsScreen
 import com.otprelay.ui.screens.welcome.WelcomeScreen
@@ -16,6 +18,8 @@ import com.otprelay.ui.screens.welcome.WelcomeScreen
 sealed class Screen(val route: String) {
     object Welcome : Screen("welcome")
     object Login : Screen("login")
+    object OtpVerification : Screen("otp_verification/{mobileNumber}")
+    object Onboarding : Screen("onboarding")
     object Permissions : Screen("permissions")
     object Dashboard : Screen("dashboard")
     object Authorizations : Screen("authorizations")
@@ -57,6 +61,40 @@ fun OTPRelayNavGraph(
                 onLoginSuccess = {
                     navController.navigate(Screen.Permissions.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                },
+                onNavigateToOtpVerification = { mobileNumber ->
+                    navController.navigate("otp_verification/$mobileNumber") {
+                        popUpTo(Screen.Login.route) { inclusive = false }
+                    }
+                }
+            )
+        }
+
+        composable(Screen.OtpVerification.route) { backStackEntry ->
+            val mobileNumber = backStackEntry.arguments?.getString("mobileNumber") ?: ""
+            OtpVerificationScreen(
+                mobileNumber = mobileNumber,
+                onVerified = { isNewUser ->
+                    if (isNewUser) {
+                        navController.navigate(Screen.Onboarding.route) {
+                            popUpTo(Screen.Login.route) { inclusive = true }
+                        }
+                    } else {
+                        navController.navigate(Screen.Permissions.route) {
+                            popUpTo(Screen.Login.route) { inclusive = true }
+                        }
+                    }
+                },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.Onboarding.route) {
+            OnboardingScreen(
+                onComplete = {
+                    navController.navigate(Screen.Permissions.route) {
+                        popUpTo(Screen.Onboarding.route) { inclusive = true }
                     }
                 }
             )

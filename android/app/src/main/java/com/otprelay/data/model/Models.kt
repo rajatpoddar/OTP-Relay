@@ -1,6 +1,4 @@
-package com.otprelay.data.model
-
-// Auth
+package com.otprelay.data.model// Auth
 data class LoginRequest(val email: String, val password: String)
 
 data class LoginResponse(
@@ -11,7 +9,6 @@ data class LoginResponse(
 )
 
 data class RefreshRequest(val refresh_token: String)
-
 data class UserInfo(
     val id: String,
     val email: String,
@@ -19,6 +16,32 @@ data class UserInfo(
     val role: String,
     val organization_id: String?,
     val is_active: Boolean
+)
+
+// App OTP Login
+data class AppRequestOTP(val mobile_number: String)
+
+data class AppRequestOTPResponse(
+    val message: String?,
+    val expires_in_minutes: Int?
+)
+
+data class AppVerifyOTP(val mobile_number: String, val otp: String)
+
+data class AppLoginResponse(
+    val access_token: String,
+    val refresh_token: String,
+    val token_type: String,
+    val user: UserInfo,
+    val is_new_user: Boolean = false,
+    val profile_completed: Boolean = true
+)
+
+data class AppOnboard(
+    val name: String,
+    val designation: String? = null,
+    val department_id: String? = null,
+    val sender_ids: List<String>? = null
 )
 
 // Device

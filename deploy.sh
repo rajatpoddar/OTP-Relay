@@ -64,7 +64,8 @@ if [ "$1" = "--fresh" ]; then
     sudo docker-compose -f $COMPOSE_FILE exec backend python seed.py
     echo "✅ Database ready"
 else
-    echo "Step 6: Running migrations only..."
+    echo "Step 6: Running alembic migrations..."
+    sudo docker-compose -f $COMPOSE_FILE exec backend alembic upgrade head 2>/dev/null || true
     sudo docker-compose -f $COMPOSE_FILE exec backend python migrate.py 2>/dev/null || true
     echo "✅ Migrations complete"
 fi

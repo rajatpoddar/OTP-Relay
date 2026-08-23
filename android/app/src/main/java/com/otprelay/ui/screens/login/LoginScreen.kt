@@ -4,10 +4,7 @@ import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,31 +12,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.otprelay.OTPRelayApp
 import com.otprelay.data.remote.ApiClient
-import com.otprelay.data.model.LoginRequest
-import com.otprelay.data.model.DeviceRegisterRequest
-import android.os.Build
-import kotlinx.coroutines.flow.first
+import com.otprelay.data.model.AppRequestOTP
 import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: () -> Unit,
+    onNavigateToOtpVerification: (mobileNumber: String) -> Unit = {}
 ) {
     val context = LocalContext.current
     val app = context.applicationContext as OTPRelayApp
     val scope = rememberCoroutineScope()
 
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
+    var mobileNumber by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var successMessage by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier
@@ -49,10 +41,10 @@ fun LoginScreen(
     ) {
         Spacer(modifier = Modifier.height(60.dp))
 
-        // Header
+        // App Logo / Header
         Text(
-            text = "Sign In",
-            fontSize = 24.sp,
+            text = "OTP Relay",
+            fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
         )
@@ -60,8 +52,17 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Enter your credentials to continue",
-            fontSize = 14.sp,
+            text = "Staff Mobile Login",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "Enter your registered mobile number.\nOperator will share the OTP with you.",
+            fontSize = 13.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
@@ -78,183 +79,78 @@ fun LoginScreen(
                 Text(
                     text = err,
                     color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(16.dp),
+                    fontSize = 13.sp
                 )
             }
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        // Email field
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
-            leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            singleLine = true
-        )
+        // Success message
+        successMessage?.let { msg ->
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = msg,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.padding(16.dp),
+                    fontSize = 13.sp
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Password field
+        // Mobile Number field
         OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
-            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
-            trailingIcon = {
-                IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                    Icon(
-                        if (passwordVisible) Icons.Default.VisibilityOff
-                        else Icons.Default.Visibility,
-                        contentDescription = "Toggle password"
-                    )
-                }
-            },
+            value = mobileNumber,
+            onValueChange = { mobileNumber = it.filter { c -> c.isDigit() || c == '+' } },
+            label = { Text("Mobile Number") },
+            leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
             modifier = Modifier.fillMaxWidth(),
-            visualTransformation = if (passwordVisible) VisualTransformation.None
-            else PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            singleLine = true
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+            singleLine = true,
+            placeholder = { Text("e.g. 9876543210") }
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Login button
+        // Request OTP button
         Button(
             onClick = {
-                if (email.isBlank() || password.isBlank()) {
-                    error = "Please enter email and password"
+                if (mobileNumber.isBlank() || mobileNumber.length < 10) {
+                    error = "Please enter a valid 10-digit mobile number"
                     return@Button
                 }
 
                 isLoading = true
                 error = null
+                successMessage = null
 
                 scope.launch {
                     try {
-                        val response = app.apiService.login(
-                            LoginRequest(email = email, password = password)
+                        val response = app.apiService.appRequestOtp(
+                            AppRequestOTP(mobile_number = mobileNumber)
                         )
 
                         if (response.isSuccessful) {
                             val data = response.body()!!
-
-                            // Save tokens
-                            app.preferencesManager.saveAuthTokens(
-                                data.access_token,
-                                data.refresh_token
-                            )
-
-                            // Save user info
-                            app.preferencesManager.saveUserInfo(
-                                id = data.user.id,
-                                email = data.user.email,
-                                name = data.user.full_name,
-                                role = data.user.role,
-                                orgId = data.user.organization_id
-                            )
-
-                            // Set API client token
-                            ApiClient.setAuthToken(data.access_token)
-
-                            // Mark as activated (persists across app restarts)
-                            app.preferencesManager.setActivated(true)
-
-                            // Register device with server using staff JWT auth (no activation code needed)
-                            try {
-                                var deviceId = app.preferencesManager.deviceId.first()
-                                if (deviceId == null) {
-                                    deviceId = java.util.UUID.randomUUID().toString()
-                                    app.preferencesManager.saveDeviceId(deviceId)
-                                }
-                                // Try staff registration first (JWT-based, no activation code)
-                                try {
-                                    val staffRegResponse = app.apiService.registerDeviceForStaff(
-                                        DeviceRegisterRequest(
-                                            device_id = deviceId,
-                                            activation_code = "STAFF",
-                                            model = Build.MODEL,
-                                            android_version = Build.VERSION.RELEASE,
-                                            app_version = "1.0.0"
-                                        )
-                                    )
-                                    if (staffRegResponse.isSuccessful) {
-                                        Log.d("LoginScreen", "Device registered via staff auth: $deviceId")
-                                    } else {
-                                        Log.w("LoginScreen", "Staff registration failed: ${staffRegResponse.code()} ${staffRegResponse.message()}")
-                                        // Fallback to activation code registration
-                                        app.apiService.registerDevice(
-                                            DeviceRegisterRequest(
-                                                device_id = deviceId,
-                                                activation_code = "DEFAULT",
-                                                model = Build.MODEL,
-                                                android_version = Build.VERSION.RELEASE,
-                                                app_version = "1.0.0"
-                                            )
-                                        )
-                                        Log.d("LoginScreen", "Device registered via activation code: $deviceId")
-                                    }
-                                } catch (e: Exception) {
-                                    Log.w("LoginScreen", "Staff registration failed, trying activation: ${e.message}")
-                                    try {
-                                        app.apiService.registerDevice(
-                                            DeviceRegisterRequest(
-                                                device_id = deviceId,
-                                                activation_code = "DEFAULT",
-                                                model = Build.MODEL,
-                                                android_version = Build.VERSION.RELEASE,
-                                                app_version = "1.0.0"
-                                            )
-                                        )
-                                        Log.d("LoginScreen", "Device registered via activation code: $deviceId")
-                                    } catch (e2: Exception) {
-                                        Log.e("LoginScreen", "ALL device registration methods failed: ${e2.message}")
-                                    }
-                                }
-                            } catch (e: Exception) {
-                                Log.e("LoginScreen", "Device registration error: ${e.message}")
-                            }
-
-                            // Sync authorized senders from server
-                            try {
-                                val senderResponse = app.apiService.getSenderIds()
-                                if (senderResponse.isSuccessful) {
-                                    val senders = senderResponse.body()?.map { sender ->
-                                        com.otprelay.data.local.AuthorizedSender(
-                                            senderId = sender.sender_id,
-                                            displayName = sender.display_name,
-                                            serviceCode = sender.display_name,
-                                            otpLength = sender.otp_length,
-                                            extractionRegex = null,
-                                            isAuthorized = true
-                                        )
-                                    } ?: emptyList()
-                                    if (senders.isNotEmpty()) {
-                                        app.database.authorizedSenderDao().deleteAll()
-                                        app.database.authorizedSenderDao().insertSenders(senders)
-                                        Log.d("LoginScreen", "Synced ${senders.size} authorized senders")
-                                    }
-                                }
-                            } catch (e: Exception) {
-                                Log.w("LoginScreen", "Sender sync failed (non-fatal): ${e.message}")
-                            }
-
-                            // ⚡ START FOREGROUND SERVICE: Keep app alive 24/7
-                            try {
-                                app.startServiceAfterLogin()
-                                Log.d("LoginScreen", "Foreground service started after login")
-                            } catch (e: Exception) {
-                                Log.w("LoginScreen", "Failed to start foreground service (non-fatal): ${e.message}")
-                            }
-
-                            onLoginSuccess()
+                            successMessage = data.message ?: "OTP sent. Ask your operator for the code."
+                            // Navigate to OTP verification screen
+                            onNavigateToOtpVerification(mobileNumber)
                         } else {
-                            error = "Invalid email or password"
+                            val errorMsg = response.errorBody()?.string()
+                            error = when (response.code()) {
+                                404 -> "No staff account found with this mobile number"
+                                400 -> "Invalid mobile number"
+                                else -> "Error: ${errorMsg ?: response.message()}"
+                            }
                         }
                     } catch (e: Exception) {
-                        Log.e("LoginScreen", "Login failed", e)
+                        Log.e("LoginScreen", "Request OTP failed", e)
                         error = "Connection error: ${e.message ?: "Unable to reach server"}"
                     } finally {
                         isLoading = false
@@ -276,11 +172,21 @@ fun LoginScreen(
                 )
             } else {
                 Text(
-                    text = "SIGN IN",
+                    text = "REQUEST OTP",
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp
                 )
             }
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Info text
+        Text(
+            text = "💡 How it works:\n1. Enter your mobile number\n2. Ask your operator for the OTP\n3. Enter the OTP to log in",
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            lineHeight = 18.sp
+        )
     }
 }

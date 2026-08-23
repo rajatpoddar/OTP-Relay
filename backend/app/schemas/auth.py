@@ -35,3 +35,29 @@ class UserInfo(BaseModel):
 class PasswordChange(BaseModel):
     current_password: str
     new_password: str
+
+
+# App OTP Login schemas
+class AppRequestOTP(BaseModel):
+    mobile_number: str
+
+
+class AppVerifyOTP(BaseModel):
+    mobile_number: str
+    otp: str
+
+
+class AppOnboard(BaseModel):
+    name: str
+    designation: Optional[str] = None
+    department_id: Optional[UUID] = None
+    sender_ids: Optional[list[str]] = None
+
+
+class AppLoginResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+    user: "UserInfo"
+    is_new_user: bool = False
+    profile_completed: bool = True

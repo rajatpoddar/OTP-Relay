@@ -14,9 +14,11 @@ class Staff(Base):
     organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False, index=True)
     staff_id_number = Column(String(50), nullable=True)
     full_name = Column(String(255), nullable=False)
-    mobile_number = Column(String(20), nullable=False)
+    mobile_number = Column(String(20), nullable=False, index=True)
+    designation = Column(String(100), nullable=True)
     department_id = Column(UUID(as_uuid=True), ForeignKey("department_services.id"), nullable=True, index=True)
     is_active = Column(Boolean, default=True, nullable=False)
+    profile_completed = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 

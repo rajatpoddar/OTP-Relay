@@ -18,10 +18,10 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    email = Column(String(255), unique=True, nullable=False, index=True)
+    email = Column(String(255), unique=True, nullable=True, index=True)
     full_name = Column(String(255), nullable=False)
-    phone = Column(String(20), nullable=True)
-    hashed_password = Column(String(255), nullable=False)
+    phone = Column(String(20), nullable=True, index=True)
+    hashed_password = Column(String(255), nullable=True)
     role = Column(SAEnum(UserRole), nullable=False, index=True)
     organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=True, index=True)
     is_active = Column(Boolean, default=True, nullable=False)

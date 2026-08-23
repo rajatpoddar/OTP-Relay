@@ -16,6 +16,16 @@ interface ApiService {
     @GET("api/auth/me")
     suspend fun getCurrentUser(): Response<UserInfo>
 
+    // App OTP Login
+    @POST("api/auth/app/request-otp")
+    suspend fun appRequestOtp(@Body request: AppRequestOTP): Response<AppRequestOTPResponse>
+
+    @POST("api/auth/app/verify-otp")
+    suspend fun appVerifyOtp(@Body request: AppVerifyOTP): Response<AppLoginResponse>
+
+    @POST("api/auth/app/onboard")
+    suspend fun appOnboard(@Body request: AppOnboard): Response<Map<String, Any>>
+
     // Device
     @POST("api/device/register-staff")
     suspend fun registerDeviceForStaff(@Body request: DeviceRegisterRequest): Response<DeviceResponse>
