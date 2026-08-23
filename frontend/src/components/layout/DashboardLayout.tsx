@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
+import { StaffLoginRequests } from '../StaffLoginRequests'
 
 export function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -43,6 +44,7 @@ export function DashboardLayout() {
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <Header onMenuClick={() => setSidebarOpen(true)} />
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          <StaffLoginRequests />
           <Outlet />
         </main>
       </div>

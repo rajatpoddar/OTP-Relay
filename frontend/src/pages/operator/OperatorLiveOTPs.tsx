@@ -3,12 +3,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../services/api'
 import { OtpMessage } from '../../types'
 import { useWebSocket } from '../../hooks/useWebSocket'
-import { Copy, CheckCircle, Clock, Timer, Wifi, WifiOff, Bell, BellOff, Smartphone, AlertCircle } from 'lucide-react'
+import { Copy, CheckCircle, Clock, Timer, Wifi, WifiOff, Bell, BellOff } from 'lucide-react'
 
 export function OperatorLiveOTPs() {
   const [selectedOtp, setSelectedOtp] = useState<OtpMessage | null>(null)
   const [notificationsEnabled, setNotificationsEnabled] = useState(false)
-  const [pendingLogins, setPendingLogins] = useState<Array<{mobile_number: string; otp: string; staff_name: string; expires_at: string}>>([])
   const queryClient = useQueryClient()
 
   const { data: otps, isLoading } = useQuery<OtpMessage[]>({
@@ -29,27 +28,9 @@ export function OperatorLiveOTPs() {
     queryClient.invalidateQueries({ queryKey: ['operator-otps'] })
   }, [queryClient])
 
-  const { isConnected, lastMessage } = useWebSocket({
-    onNewOtp: handleNewOtp,
-    onOtpUpdate: handleOtpUpdate,
-  })
+  const { isConnected } = useWebSocket()
 
-  // Handle app_login_request events from WebSocket
-  useEffect(() => {
-    if (lastMessage?.type === 'app_login_request') {
-      const data = lastMessage.data
-      setPendingLogins(prev => {
-        // Avoid duplicates
-        const exists = prev.find(p => p.mobile_number === data.mobile_number)
-        if (exists) return prev
-        return [data, ...prev]
-      })
-      // Auto-remove after 5 minutes
-      setTimeout(() => {
-        setPendingLogins(prev => prev.filter(p => p.mobile_number !== data.mobile_number))
-      }, 5 * 60 * 1000)
-    }
-  }, [lastMessage])
+
 
   const useMutation_ = useMutation({
     mutationFn: async ({ otpId, note }: { otpId: string; note: string }) => {
@@ -123,44 +104,7 @@ export function OperatorLiveOTPs() {
         </div>
       </div>
 
-      {/* Pending App Login Requests */}
-      {pendingLogins.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl overflow-hidden">
-          <div className="p-4 border-b border-blue-200 bg-blue-100/50 flex items-center justify-between">
-            <h3 className="text-headline-sm font-headline-sm text-blue-800 flex items-center gap-2">
-              <Smartphone className="w-5 h-5" /> Staff Login Requests ({pendingLogins.length})
-            </h3>
-            <span className="text-label-sm font-label-sm text-blue-600">Share OTP verbally with staff</span>
-          </div>
-          <div className="divide-y divide-blue-200">
-            {pendingLogins.map((login) => (
-              <div key={login.mobile_number} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <Smartphone className="w-5 h-5 text-blue-600" />
-                    <div>
-                      <p className="text-body-md font-body-md text-blue-900 font-semibold">{login.staff_name}</p>
-                      <p className="text-label-sm font-label-sm text-blue-600">{login.mobile_number}</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="bg-blue-900 text-white px-6 py-3 rounded-lg text-2xl font-bold tracking-[0.3em]" style={{ fontFamily: 'monospace' }}>
-                    {login.otp}
-                  </div>
-                  <button
-                    onClick={() => navigator.clipboard.writeText(login.otp)}
-                    className="px-3 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
-                    title="Copy OTP"
-                  >
-                    <Copy className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+
 
       <div className="grid grid-cols-12 gap-8">
         {/* Active OTP */}

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useCallback, useState, ReactNode } from 'react'
 import { useAuth } from './useAuth'
 
 interface WebSocketMessage {
@@ -7,13 +7,19 @@ interface WebSocketMessage {
   data: any
 }
 
-interface UseWebSocketOptions {
-  onNewOtp?: (data: any) => void
-  onOtpUpdate?: (data: any) => void
-  onStatusChange?: (status: string) => void
+interface WebSocketContextType {
+  isConnected: boolean
+  lastMessage: WebSocketMessage | null
+  sendMessage: (message: any) => void
 }
 
-export function useWebSocket(options: UseWebSocketOptions = {}) {
+const WebSocketContext = createContext<WebSocketContextType>({
+  isConnected: false,
+  lastMessage: null,
+  sendMessage: () => {},
+})
+
+export function WebSocketProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimeoutRef = useRef<number | null>(null)
@@ -35,7 +41,6 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
       ws.onopen = () => {
         setIsConnected(true)
-        options.onStatusChange?.('connected')
         console.log('[WS] Connected')
       }
 
@@ -46,21 +51,11 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
           switch (msg.type) {
             case 'new_otp':
-              options.onNewOtp?.(msg.data)
-              // Show browser notification
               if (Notification.permission === 'granted') {
                 new Notification('New OTP Received', {
                   body: `Service: ${msg.data.service_name || 'Unknown'}\nOTP: ${msg.data.otp_display || '••••••'}`,
                   icon: '/favicon.ico',
                 })
-              }
-              break
-            case 'otp_update':
-              options.onOtpUpdate?.(msg.data)
-              break
-            case 'status':
-              if (msg.data.status === 'pong') {
-                // Keepalive response
               }
               break
           }
@@ -71,7 +66,6 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
       ws.onclose = () => {
         setIsConnected(false)
-        options.onStatusChange?.('disconnected')
         console.log('[WS] Disconnected, reconnecting in 5s...')
         reconnectTimeoutRef.current = window.setTimeout(connect, 5000)
       }
@@ -82,7 +76,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     } catch (error) {
       console.error('[WS] Connection failed:', error)
     }
-  }, [user?.organization_id, options.onNewOtp, options.onOtpUpdate, options.onStatusChange])
+  }, [user?.organization_id])
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {
@@ -117,5 +111,13 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     return () => clearInterval(interval)
   }, [sendMessage])
 
-  return { isConnected, lastMessage, sendMessage }
+  return (
+    <WebSocketContext.Provider value={{ isConnected, lastMessage, sendMessage }}>
+      {children}
+    </WebSocketContext.Provider>
+  )
+}
+
+export function useWebSocket() {
+  return useContext(WebSocketContext)
 }
