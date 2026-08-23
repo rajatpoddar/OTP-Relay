@@ -1,10 +1,12 @@
 #!/bin/bash
 
-set -e
+# Note: not using set -e to avoid crashes on warnings
 
 ADB="/Users/rajatpoddar/Library/Android/sdk/platform-tools/adb"
 ANDROID_DIR="$(dirname "$0")/android"
 GRADLE="$ANDROID_DIR/gradlew"
+PROJECT_ROOT="$(dirname "$0")"
+DIST_DIR="$PROJECT_ROOT/dist"
 
 echo "════════════════════════════════════════"
 echo "  Android Build & Install Script"
@@ -14,27 +16,32 @@ echo ""
 # Step 1: Check if Android device is connected
 echo "🔍 Checking for connected Android devices..."
 
-DEVICE_COUNT=$($ADB devices | grep -w "device" | wc -l | tr -d ' ')
+DEVICE_COUNT=$($ADB devices 2>/dev/null | grep -w "device" | wc -l | tr -d ' ')
 
 if [ "$DEVICE_COUNT" -eq 0 ]; then
     echo ""
-    echo "❌ No Android device found!"
+    echo "⚠️  No Android device found."
     echo ""
-    echo "Please connect your device via USB and make sure:"
-    echo "  1. USB Debugging is ON (Settings > Developer Options)"
-    echo "  2. Device is authorized (check popup on phone)"
+    echo "Options:"
+    echo "  1. Connect a device via USB and press ENTER"
+    echo "  2. Type 'skip' to build APK only (no install)"
     echo ""
-    read -p "Press ENTER after connecting your device..."
-    echo ""
+    read -p "Choice: " CHOICE
 
-    DEVICE_COUNT=$($ADB devices | grep -w "device" | wc -l | tr -d ' ')
-    if [ "$DEVICE_COUNT" -eq 0 ]; then
-        echo "❌ Still no device found. Aborting."
-        exit 1
+    if [ "$CHOICE" = "skip" ]; then
+        SKIP_INSTALL=true
+    else
+        DEVICE_COUNT=$($ADB devices 2>/dev/null | grep -w "device" | wc -l | tr -d ' ')
+        if [ "$DEVICE_COUNT" -eq 0 ]; then
+            echo "❌ Still no device found. Building APK only."
+            SKIP_INSTALL=true
+        fi
     fi
 fi
 
-echo "✅ Device connected: $($ADB devices | grep -w "device" | head -1 | awk '{print $1}')"
+if [ "$SKIP_INSTALL" != "true" ]; then
+    echo "✅ Device connected: $($ADB devices | grep -w "device" | head -1 | awk '{print $1}')"
+fi
 echo ""
 
 # Step 2: Gradle Clean Build APK
@@ -42,7 +49,7 @@ echo "🔨 Running gradle clean build..."
 echo ""
 
 cd "$ANDROID_DIR"
-./gradlew clean assembleDebug
+$GRADLE clean assembleDebug 2>&1 | tail -5
 
 APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
 
@@ -51,38 +58,58 @@ if [ ! -f "$APK_PATH" ]; then
     exit 1
 fi
 
-# Rename APK to proper name
-FINAL_APK="app/build/outputs/apk/debug/otp-relay.apk"
-mv "$APK_PATH" "$FINAL_APK"
-APK_PATH="$FINAL_APK"
+# Copy APK to dist/ with proper name
+mkdir -p "$DIST_DIR"
+VERSION=$(grep 'versionName' app/build.gradle.kts | sed 's/.*"\(.*\)".*/\1/')
+FINAL_NAME="otp-relay-v${VERSION}.apk"
+cp "$APK_PATH" "$DIST_DIR/$FINAL_NAME"
+APK_SIZE=$(du -h "$DIST_DIR/$FINAL_NAME" | cut -f1)
 
-echo "✅ Build successful! APK ready: $ANDROID_DIR/$APK_PATH"
+echo ""
+echo "════════════════════════════════════════"
+echo "  ✅ Build Successful!"
+echo "════════════════════════════════════════"
+echo ""
+echo "  📦 APK File: $DIST_DIR/$FINAL_NAME"
+echo "  📏 Size: $APK_SIZE"
+echo "  📍 Version: v$VERSION"
 echo ""
 
-# Step 3: Clear Logcat
-echo "🧹 Clearing logcat..."
-$ADB logcat -c
-echo "✅ Logcat cleared"
-echo ""
+# Step 3: Install on device (if connected)
+if [ "$SKIP_INSTALL" != "true" ]; then
+    echo "🧹 Clearing logcat..."
+    $ADB logcat -c 2>/dev/null
 
-# Step 4: Uninstall old app (clean install for onboarding)
-if $ADB shell pm list packages | grep -q com.otprelay; then
-    echo "🗑️  Uninstalling old app..."
-    $ADB uninstall com.otprelay
-    echo "✅ Old app removed"
-else
-    echo "ℹ️  No existing app found, fresh install"
+    # Uninstall old app for clean install
+    if $ADB shell pm list packages 2>/dev/null | grep -q com.otprelay; then
+        echo "🗑️  Uninstalling old app..."
+        $ADB uninstall com.otprelay 2>/dev/null
+    fi
+
+    echo "📦 Installing APK on device..."
+    $ADB install -r "$DIST_DIR/$FINAL_NAME"
+
+    echo ""
+    echo "  ✅ App installed on device!"
 fi
-echo ""
-
-# Step 5: Install APK
-echo "📦 Installing APK on device..."
-$ADB install -r "$APK_PATH"
 
 echo ""
 echo "════════════════════════════════════════"
-echo "  🚀 Done! App installed successfully."
+echo "  📋 Next Steps"
 echo "════════════════════════════════════════"
 echo ""
-echo "  To view logs: $ADB logcat -s otp_relay"
+echo "  To upload APK to server:"
+echo "  1. Go to https://otp.nregabot.com/app/app-versions"
+echo "  2. Click 'Upload APK' and select:"
+echo "     $DIST_DIR/$FINAL_NAME"
+echo "  3. Click 'Push New Version' to publish"
+echo ""
+echo "  Or upload manually via terminal:"
+echo "  curl -X POST https://otp.nregabot.com/api/upload/apk \\"
+echo "    -H 'Authorization: Bearer <your-token>' \\"
+echo "    -F 'file=@$DIST_DIR/$FINAL_NAME'"
+echo ""
+if [ "$SKIP_INSTALL" != "true" ]; then
+    echo "  To view logs: $ADB logcat -s otp_relay"
+fi
 echo ""
