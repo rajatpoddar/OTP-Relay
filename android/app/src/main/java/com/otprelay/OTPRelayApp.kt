@@ -113,7 +113,7 @@ class OTPRelayApp : Application(), Configuration.Provider {
                         activation_code = "STAFF",
                         model = android.os.Build.MODEL,
                         android_version = android.os.Build.VERSION.RELEASE,
-                        app_version = "1.0.0"
+                        app_version = BuildConfig.VERSION_NAME
                     )
                 )
                 if (staffResponse.isSuccessful) {
@@ -133,7 +133,7 @@ class OTPRelayApp : Application(), Configuration.Provider {
                         activation_code = "DEFAULT",
                         model = android.os.Build.MODEL,
                         android_version = android.os.Build.VERSION.RELEASE,
-                        app_version = "1.0.0"
+                        app_version = BuildConfig.VERSION_NAME
                     )
                 )
                 if (fallbackResponse.isSuccessful) {

@@ -16,6 +16,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.otprelay.BuildConfig
 import com.otprelay.OTPRelayApp
 import com.otprelay.data.remote.ApiClient
 import com.otprelay.data.model.AppVerifyOTP
@@ -190,7 +191,7 @@ fun OtpVerificationScreen(
                                             activation_code = "STAFF",
                                             model = Build.MODEL,
                                             android_version = Build.VERSION.RELEASE,
-                                            app_version = "1.1.0"
+                                            app_version = BuildConfig.VERSION_NAME
                                         )
                                     )
                                     Log.d("OtpVerification", "Device registered via staff auth")
@@ -203,7 +204,7 @@ fun OtpVerificationScreen(
                                                 activation_code = "DEFAULT",
                                                 model = Build.MODEL,
                                                 android_version = Build.VERSION.RELEASE,
-                                                app_version = "1.1.0"
+                                                app_version = BuildConfig.VERSION_NAME
                                             )
                                         )
                                     } catch (e2: Exception) {

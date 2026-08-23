@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.otprelay.BuildConfig
 import com.otprelay.OTPRelayApp
 import com.otprelay.service.RelayForegroundService
 import androidx.compose.runtime.collectAsState
@@ -241,7 +242,7 @@ fun SettingsScreen(
 
                     InfoRow(label = "Model", value = Build.MODEL)
                     InfoRow(label = "Android Version", value = Build.VERSION.RELEASE)
-                    InfoRow(label = "App Version", value = "1.0.0")
+                    InfoRow(label = "App Version", value = BuildConfig.VERSION_NAME)
                     InfoRow(label = "SDK", value = Build.VERSION.SDK_INT.toString())
                 }
             }
