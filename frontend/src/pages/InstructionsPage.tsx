@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Download, Shield, Users, Smartphone, Settings, CheckCircle, ArrowRight, Key, Mail, GitBranch, Radio } from 'lucide-react'
+import { Download, Shield, Users, Smartphone, Settings, CheckCircle, ArrowRight, Key, Mail, GitBranch, Radio, ChevronDown, ChevronUp } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
 function useApkUrl() {
@@ -39,7 +39,7 @@ const setupSteps = [
       'Login to the web dashboard at otp.nregabot.com with admin credentials.',
       'Go to "Staff" section and add all staff members with their mobile numbers.',
       'Go to "Operators" section and create operator accounts.',
-      'Go to "Sender IDs" and add all government portal sender IDs (e.g., BT-VBGRAM-G, VK-ADHAAR, etc.).',
+      'Go to "Sender IDs" and add all government portal sender IDs.',
       'Set OTP length and service name for each sender ID.',
     ],
   },
@@ -155,80 +155,63 @@ export function InstructionsPage() {
   return (
     <div className="min-h-screen bg-surface">
       {/* Header */}
-      <header className="bg-primary text-white py-6 shadow-lg">
+      <header className="bg-primary text-white py-4 sm:py-6 shadow-lg">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-2 text-white/80 hover:text-white transition-colors">
-              <span className="material-symbols-outlined">arrow_back</span>
-              <span className="text-sm font-medium">Back to Home</span>
+            <Link to="/" className="flex items-center gap-1.5 text-white/80 hover:text-white transition-colors">
+              <span className="material-symbols-outlined text-lg">arrow_back</span>
+              <span className="text-sm font-medium hidden sm:inline">Back to Home</span>
             </Link>
-            <a href={APK_DOWNLOAD_URL} download className="flex items-center gap-2 bg-white text-primary px-4 py-2 rounded-lg font-medium hover:bg-white/90 transition-colors">
+            <a href={APK_DOWNLOAD_URL} download className="flex items-center gap-2 bg-white text-primary px-3 py-2 sm:px-4 rounded-lg text-sm font-medium hover:bg-white/90 transition-colors">
               <Download className="w-4 h-4" />
-              Download App
+              <span className="hidden sm:inline">Download App</span>
+              <span className="sm:hidden">Download</span>
             </a>
           </div>
-          <div className="mt-8 text-center">
-            <h1 className="text-3xl sm:text-4xl font-bold mb-3">OTP Relay — Setup Guide</h1>
-            <p className="text-white/80 text-lg">Complete instructions for setting up the OTP relay system in your office.</p>
+          <div className="mt-6 sm:mt-8 text-center">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 sm:mb-3">OTP Relay — Setup Guide</h1>
+            <p className="text-white/80 text-sm sm:text-lg px-2">Complete instructions for setting up the OTP relay system in your office.</p>
           </div>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-12 space-y-16">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-10 sm:space-y-16">
 
         {/* Download CTA */}
-        <section className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-8 text-center">
-          <Smartphone className="w-12 h-12 text-blue-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Step 0: Download the App</h2>
-          <p className="text-gray-600 mb-6 max-w-lg mx-auto">Install the OTP Relay app on all staff member Android phones before proceeding with setup.</p>
-          <a href={APK_DOWNLOAD_URL} download className="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-xl text-lg font-bold hover:bg-blue-700 transition-colors shadow-lg">
-            <Download className="w-6 h-6" />
+        <section className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6 sm:p-8 text-center">
+          <Smartphone className="w-10 h-10 sm:w-12 sm:h-12 text-blue-600 mx-auto mb-3 sm:mb-4" />
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Step 0: Download the App</h2>
+          <p className="text-gray-600 text-sm sm:text-base mb-4 sm:mb-6 max-w-lg mx-auto">Install the OTP Relay app on all staff member Android phones before proceeding with setup.</p>
+          <a href={APK_DOWNLOAD_URL} download className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 sm:px-8 sm:py-4 rounded-xl text-base sm:text-lg font-bold hover:bg-blue-700 transition-colors shadow-lg">
+            <Download className="w-5 h-5 sm:w-6 sm:h-6" />
             Download OTP Relay APK
           </a>
-          <p className="text-sm text-gray-500 mt-3">Android 7.0+ required • Size: ~15 MB</p>
+          <p className="text-xs sm:text-sm text-gray-500 mt-3">Android 7.0+ required • Size: ~15 MB</p>
         </section>
 
         {/* Setup Steps */}
         <section>
-          <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">Complete Setup Guide</h2>
-          <div className="space-y-6">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6 sm:mb-8 text-center">Complete Setup Guide</h2>
+          <div className="space-y-4 sm:space-y-6">
             {setupSteps.map((step) => (
-              <div key={step.step} className={`border rounded-xl overflow-hidden ${step.bg}`}>
-                <div className="p-6">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className={`w-10 h-10 rounded-full bg-white border-2 flex items-center justify-center font-bold ${step.color}`}>
-                      {step.step}
-                    </div>
-                    <step.icon className={`w-6 h-6 ${step.color}`} />
-                    <h3 className="text-lg font-bold text-gray-900">{step.title}</h3>
-                  </div>
-                  <ol className="ml-14 space-y-2">
-                    {step.details.map((detail, i) => (
-                      <li key={i} className="flex items-start gap-2 text-gray-700">
-                        <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
-                        <span>{detail}</span>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              </div>
+              <SetupStepCard key={step.step} step={step} />
             ))}
           </div>
         </section>
 
         {/* Roles */}
         <section>
-          <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">Roles & Responsibilities</h2>
-          <div className="grid sm:grid-cols-3 gap-6">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6 sm:mb-8 text-center">Roles & Responsibilities</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
             {roles.map((r) => (
-              <div key={r.role} className="bg-white border border-gray-200 rounded-xl p-6">
-                <div className={`w-12 h-12 rounded-full ${r.color} flex items-center justify-center mb-4`}>
-                  <r.icon className="w-6 h-6" />
+              <div key={r.role} className="bg-white border border-gray-200 rounded-xl p-5 sm:p-6">
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full ${r.color} flex items-center justify-center mb-3 sm:mb-4`}>
+                  <r.icon className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-3">{r.role}</h3>
-                <ul className="space-y-2">
+                <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2 sm:mb-3">{r.role}</h3>
+                <ul className="space-y-1.5 sm:space-y-2">
                   {r.responsibilities.map((resp, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                    <li key={i} className="flex items-start gap-2 text-xs sm:text-sm text-gray-600">
                       <CheckCircle className="w-3.5 h-3.5 text-green-500 mt-0.5 shrink-0" />
                       {resp}
                     </li>
@@ -240,13 +223,13 @@ export function InstructionsPage() {
         </section>
 
         {/* Login Credentials */}
-        <section className="bg-gray-50 border border-gray-200 rounded-xl p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <Key className="w-5 h-5" />
+        <section className="bg-gray-50 border border-gray-200 rounded-xl p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+            <Key className="w-4 h-4 sm:w-5 sm:h-5" />
             Default Login Credentials
           </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <table className="w-full text-sm min-w-[280px]">
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-2 px-3 font-semibold text-gray-700">Role</th>
@@ -255,7 +238,11 @@ export function InstructionsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                <tr><td className="py-2 px-3 font-medium">Super Admin</td><td className="py-2 px-3 font-mono text-xs">admin@otp-relay.com</td><td className="py-2 px-3 font-mono text-xs">admin123</td></tr>
+                <tr>
+                  <td className="py-2 px-3 font-medium">Super Admin</td>
+                  <td className="py-2 px-3 font-mono text-xs break-all">admin@otp-relay.com</td>
+                  <td className="py-2 px-3 font-mono text-xs">admin123</td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -264,26 +251,23 @@ export function InstructionsPage() {
 
         {/* FAQ */}
         <section>
-          <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">Frequently Asked Questions</h2>
-          <div className="space-y-4">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6 sm:mb-8 text-center">Frequently Asked Questions</h2>
+          <div className="space-y-3 sm:space-y-4">
             {faqs.map((faq) => (
-              <div key={faq.q} className="bg-white border border-gray-200 rounded-xl p-5">
-                <h4 className="font-bold text-gray-900 mb-2">{faq.q}</h4>
-                <p className="text-gray-600 text-sm">{faq.a}</p>
-              </div>
+              <FaqItem key={faq.q} faq={faq} />
             ))}
           </div>
         </section>
 
         {/* Bottom CTA */}
-        <section className="bg-primary text-white rounded-2xl p-8 text-center">
-          <h2 className="text-2xl font-bold mb-3">Ready to Get Started?</h2>
-          <p className="text-white/80 mb-6">Login to the dashboard and start configuring your OTP relay system.</p>
+        <section className="bg-primary text-white rounded-2xl p-6 sm:p-8 text-center">
+          <h2 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-3">Ready to Get Started?</h2>
+          <p className="text-white/80 text-sm sm:text-base mb-4 sm:mb-6">Login to the dashboard and start configuring your OTP relay system.</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link to="/login" className="inline-flex items-center justify-center gap-2 bg-white text-primary px-6 py-3 rounded-lg font-bold hover:bg-white/90 transition-colors">
+            <Link to="/login" className="inline-flex items-center justify-center gap-2 bg-white text-primary px-5 py-3 rounded-lg text-sm sm:text-base font-bold hover:bg-white/90 transition-colors">
               Open Dashboard <ArrowRight className="w-4 h-4" />
             </Link>
-            <a href={APK_DOWNLOAD_URL} download className="inline-flex items-center justify-center gap-2 bg-white/10 border border-white/30 text-white px-6 py-3 rounded-lg font-bold hover:bg-white/20 transition-colors">
+            <a href={APK_DOWNLOAD_URL} download className="inline-flex items-center justify-center gap-2 bg-white/10 border border-white/30 text-white px-5 py-3 rounded-lg text-sm sm:text-base font-bold hover:bg-white/20 transition-colors">
               <Download className="w-4 h-4" />
               Download App
             </a>
@@ -293,9 +277,72 @@ export function InstructionsPage() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-100 border-t border-gray-200 py-6 text-center text-sm text-gray-500">
+      <footer className="bg-gray-100 border-t border-gray-200 py-4 sm:py-6 text-center text-xs sm:text-sm text-gray-500 px-4">
         <p>© 2026 OTP Relay Platform. Need help? Contact your system administrator.</p>
       </footer>
+    </div>
+  )
+}
+
+// Collapsible setup step card
+function SetupStepCard({ step }: { step: typeof setupSteps[0] }) {
+  const [expanded, setExpanded] = useState(step.step <= 2) // First 2 steps expanded by default
+
+  return (
+    <div className={`border rounded-xl overflow-hidden ${step.bg}`}>
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full p-4 sm:p-6 flex items-center gap-3 sm:gap-4 text-left hover:bg-black/5 transition-colors"
+      >
+        <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white border-2 flex items-center justify-center font-bold text-sm sm:text-base ${step.color} shrink-0`}>
+          {step.step}
+        </div>
+        <step.icon className={`w-5 h-5 sm:w-6 sm:h-6 ${step.color} shrink-0`} />
+        <h3 className="text-sm sm:text-lg font-bold text-gray-900 flex-1">{step.title}</h3>
+        {expanded ? (
+          <ChevronUp className="w-5 h-5 text-gray-400 shrink-0" />
+        ) : (
+          <ChevronDown className="w-5 h-5 text-gray-400 shrink-0" />
+        )}
+      </button>
+      {expanded && (
+        <div className="px-4 pb-4 sm:px-6 sm:pb-6">
+          <ol className="space-y-2 ml-12 sm:ml-14">
+            {step.details.map((detail, i) => (
+              <li key={i} className="flex items-start gap-2 text-gray-700 text-xs sm:text-sm">
+                <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500 mt-0.5 shrink-0" />
+                <span>{detail}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Collapsible FAQ item
+function FaqItem({ faq }: { faq: typeof faqs[0] }) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full p-4 sm:p-5 flex items-center gap-3 text-left hover:bg-gray-50 transition-colors"
+      >
+        <h4 className="font-bold text-gray-900 text-sm sm:text-base flex-1">{faq.q}</h4>
+        {open ? (
+          <ChevronUp className="w-5 h-5 text-gray-400 shrink-0" />
+        ) : (
+          <ChevronDown className="w-5 h-5 text-gray-400 shrink-0" />
+        )}
+      </button>
+      {open && (
+        <div className="px-4 pb-4 sm:px-5 sm:pb-5">
+          <p className="text-gray-600 text-xs sm:text-sm leading-relaxed">{faq.a}</p>
+        </div>
+      )}
     </div>
   )
 }
