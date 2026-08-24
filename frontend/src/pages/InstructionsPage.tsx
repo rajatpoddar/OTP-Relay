@@ -25,6 +25,7 @@ const setupSteps = [
     details: [
       'Download the OTP Relay Android app using the button below.',
       'Install the APK on all staff member phones.',
+      '⚠️ Play Protect will show a warning — tap "More details" then "Install anyway".',
       'Enable "Install from Unknown Sources" if prompted.',
       'The app needs SMS permission to detect OTPs — grant it when asked.',
     ],
@@ -187,6 +188,12 @@ export function InstructionsPage() {
             Download OTP Relay APK
           </a>
           <p className="text-xs sm:text-sm text-gray-500 mt-3">Android 7.0+ required • Size: ~15 MB</p>
+          <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-xs sm:text-sm text-amber-800">
+              ⚠️ <strong>Play Protect warning?</strong> This is normal.{' '}
+              <a href="/install-guide.html" target="_blank" className="underline font-bold">See installation guide →</a>
+            </p>
+          </div>
         </section>
 
         {/* Setup Steps */}
