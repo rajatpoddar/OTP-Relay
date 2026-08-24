@@ -2,47 +2,32 @@
 
 # Note: not using set -e to avoid crashes on warnings
 
-ADB="/Users/rajatpoddar/Library/Android/sdk/platform-tools/adb"
+ADB="$HOME/Library/Android/sdk/platform-tools/adb"
 ANDROID_DIR="$(dirname "$0")/android"
 GRADLE="$ANDROID_DIR/gradlew"
 PROJECT_ROOT="$(dirname "$0")"
 DIST_DIR="$PROJECT_ROOT/dist"
 
-echo "════════════════════════════════════════"
+echo "══════════════════════════════════════════"
 echo "  Android Build & Install Script"
-echo "════════════════════════════════════════"
+echo "══════════════════════════════════════════"
 echo ""
 
 # Step 1: Check if Android device is connected
 echo "🔍 Checking for connected Android devices..."
 
+SKIP_INSTALL=false
 DEVICE_COUNT=$($ADB devices 2>/dev/null | grep -w "device" | wc -l | tr -d ' ')
 
 if [ "$DEVICE_COUNT" -eq 0 ]; then
+    echo "⚠️  No device found — building APK only (no install)."
     echo ""
-    echo "⚠️  No Android device found."
+    SKIP_INSTALL=true
+else
+    DEVICE_ID=$($ADB devices | grep -w "device" | head -1 | awk '{print $1}')
+    echo "✅ Device connected: $DEVICE_ID"
     echo ""
-    echo "Options:"
-    echo "  1. Connect a device via USB and press ENTER"
-    echo "  2. Type 'skip' to build APK only (no install)"
-    echo ""
-    read -p "Choice: " CHOICE
-
-    if [ "$CHOICE" = "skip" ]; then
-        SKIP_INSTALL=true
-    else
-        DEVICE_COUNT=$($ADB devices 2>/dev/null | grep -w "device" | wc -l | tr -d ' ')
-        if [ "$DEVICE_COUNT" -eq 0 ]; then
-            echo "❌ Still no device found. Building APK only."
-            SKIP_INSTALL=true
-        fi
-    fi
 fi
-
-if [ "$SKIP_INSTALL" != "true" ]; then
-    echo "✅ Device connected: $($ADB devices | grep -w "device" | head -1 | awk '{print $1}')"
-fi
-echo ""
 
 # Step 2: Gradle Clean Build APK
 echo "🔨 Running gradle clean build..."
@@ -74,9 +59,9 @@ cp "$APK_PATH" "$DIST_DIR/$FINAL_NAME"
 APK_SIZE=$(du -h "$DIST_DIR/$FINAL_NAME" | cut -f1)
 
 echo ""
-echo "════════════════════════════════════════"
+echo "══════════════════════════════════════════"
 echo "  ✅ Build Successful!"
-echo "════════════════════════════════════════"
+echo "══════════════════════════════════════════"
 echo ""
 echo "  📦 APK File: $DIST_DIR/$FINAL_NAME"
 echo "  📏 Size: $APK_SIZE"
@@ -99,25 +84,27 @@ if [ "$SKIP_INSTALL" != "true" ]; then
 
     echo ""
     echo "  ✅ App installed on device!"
+else
+    echo "══════════════════════════════════════════"
+    echo "  📱 No device connected"
+    echo "══════════════════════════════════════════"
+    echo ""
+    echo "  APK is ready at:"
+    echo "  $DIST_DIR/$FINAL_NAME"
+    echo ""
+    echo "  Connect phone and run:"
+    echo "  adb install -r $DIST_DIR/$FINAL_NAME"
+    echo ""
 fi
 
 echo ""
-echo "════════════════════════════════════════"
+echo "══════════════════════════════════════════"
 echo "  📋 Next Steps"
-echo "════════════════════════════════════════"
+echo "══════════════════════════════════════════"
 echo ""
 echo "  To upload APK to server:"
 echo "  1. Go to https://otp.nregabot.com/app/app-versions"
 echo "  2. Click 'Upload APK' and select:"
 echo "     $DIST_DIR/$FINAL_NAME"
 echo "  3. Click 'Push New Version' to publish"
-echo ""
-echo "  Or upload manually via terminal:"
-echo "  curl -X POST https://otp.nregabot.com/api/upload/apk \\"
-echo "    -H 'Authorization: Bearer <your-token>' \\"
-echo "    -F 'file=@$DIST_DIR/$FINAL_NAME'"
-echo ""
-if [ "$SKIP_INSTALL" != "true" ]; then
-    echo "  To view logs: $ADB logcat -s otp_relay"
-fi
 echo ""
