@@ -18,7 +18,8 @@ interface AppVersion {
 export function AppVersionsPage() {
   const [showDetail, setShowDetail] = useState<AppVersion | null>(null)
   const [uploading, setUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState('')
+  const [uploadPercent, setUploadPercent] = useState(0)
+  const [uploadPhase, setUploadPhase] = useState('')
   const [uploadSuccess, setUploadSuccess] = useState(false)
   const [releaseNotes, setReleaseNotes] = useState('')
   const [forceUpdate, setForceUpdate] = useState(false)
@@ -42,33 +43,65 @@ export function AppVersionsPage() {
     },
   })
 
-  const handleUploadApk = async (file: File) => {
+  const handleUploadApk = (file: File) => {
     setUploading(true)
-    setUploadProgress('Uploading APK...')
+    setUploadPercent(0)
+    setUploadPhase('Preparing...')
     setUploadSuccess(false)
-    try {
-      const formData = new FormData()
-      formData.append('file', file)
-      if (releaseNotes) formData.append('release_notes', releaseNotes)
-      formData.append('force_update', String(forceUpdate))
 
-      const response = await api.post('/api/upload/apk', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+    const formData = new FormData()
+    formData.append('file', file)
+    if (releaseNotes) formData.append('release_notes', releaseNotes)
+    formData.append('force_update', String(forceUpdate))
 
-      setUploadProgress('')
-      setUploadSuccess(true)
-      setReleaseNotes('')
-      setForceUpdate(false)
-      queryClient.invalidateQueries({ queryKey: ['super-admin-versions'] })
+    const xhr = new XMLHttpRequest()
 
-      // Auto-hide success message after 5 seconds
-      setTimeout(() => setUploadSuccess(false), 5000)
-    } catch (e: any) {
-      setUploadProgress(`❌ Upload failed: ${e.response?.data?.detail || e.message}`)
-    } finally {
+    xhr.upload.addEventListener('progress', (e) => {
+      if (e.lengthComputable) {
+        const pct = Math.round((e.loaded / e.total) * 100)
+        setUploadPercent(pct)
+        const sizeMB = (e.loaded / (1024 * 1024)).toFixed(1)
+        const totalMB = (e.total / (1024 * 1024)).toFixed(1)
+        if (pct < 100) {
+          setUploadPhase(`Uploading... ${sizeMB}MB / ${totalMB}MB`)
+        } else {
+          setUploadPhase('Processing...')
+        }
+      }
+    })
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        setUploadPercent(100)
+        setUploadPhase('Published!')
+        setUploadSuccess(true)
+        setReleaseNotes('')
+        setForceUpdate(false)
+        queryClient.invalidateQueries({ queryKey: ['super-admin-versions'] })
+        setTimeout(() => {
+          setUploadSuccess(false)
+          setUploadPercent(0)
+          setUploadPhase('')
+        }, 4000)
+      } else {
+        try {
+          const err = JSON.parse(xhr.responseText)
+          setUploadPhase(`❌ Failed: ${err.detail || 'Unknown error'}`)
+        } catch {
+          setUploadPhase(`❌ Upload failed (${xhr.status})`)
+        }
+      }
       setUploading(false)
-    }
+    })
+
+    xhr.addEventListener('error', () => {
+      setUploadPhase('❌ Network error — check connection')
+      setUploading(false)
+    })
+
+    xhr.open('POST', '/api/upload/apk')
+    xhr.setRequestHeader('Authorization', `Bearer ${localStorage.getItem('token') || ''}`)
+    xhr.send(formData)
   }
 
   const latestVersion = versions?.[0]
@@ -115,22 +148,51 @@ export function AppVersionsPage() {
             </div>
 
             <label className="block">
-              <div className={`flex items-center justify-center gap-2 px-6 py-4 rounded-xl cursor-pointer transition-all ${
-                uploading
-                  ? 'bg-primary/10 text-primary'
-                  : 'bg-primary text-on-primary hover:bg-inverse-surface'
-              }`}>
-                {uploading ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                    <span className="font-bold">Uploading...</span>
-                  </>
-                ) : (
-                  <>
-                    <FileUp className="w-5 h-5" />
-                    <span className="font-bold">Upload APK & Publish</span>
-                  </>
+              <div className="relative overflow-hidden rounded-xl transition-all">
+                {/* Progress fill background */}
+                {uploading && (
+                  <div
+                    className="absolute inset-0 bg-gradient-to-r from-primary via-primary to-green-500 transition-all duration-300 ease-out rounded-xl"
+                    style={{ width: `${uploadPercent}%`, opacity: 0.9 }}
+                  />
                 )}
+                <div className={`relative flex items-center justify-center gap-2 px-6 py-4 cursor-pointer transition-all ${
+                  uploading
+                    ? uploadPercent >= 100
+                      ? 'bg-green-600 text-white'
+                      : 'text-white'
+                    : 'bg-primary text-on-primary hover:bg-inverse-surface'
+                }`}>
+                  {uploading ? (
+                    uploadPercent >= 100 ? (
+                      <>
+                        <CheckCircle className="w-5 h-5" />
+                        <span className="font-bold">Published!</span>
+                      </>
+                    ) : (
+                      <>
+                        <div className="relative w-5 h-5">
+                          <svg className="w-5 h-5 -rotate-90" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="3" />
+                            <circle
+                              cx="12" cy="12" r="10" fill="none" stroke="white" strokeWidth="3"
+                              strokeDasharray={`${2 * Math.PI * 10}`}
+                              strokeDashoffset={`${2 * Math.PI * 10 * (1 - uploadPercent / 100)}`}
+                              strokeLinecap="round"
+                              className="transition-all duration-300"
+                            />
+                          </svg>
+                        </div>
+                        <span className="font-bold">{uploadPercent}%</span>
+                      </>
+                    )
+                  ) : (
+                    <>
+                      <FileUp className="w-5 h-5" />
+                      <span className="font-bold">Upload APK & Publish</span>
+                    </>
+                  )}
+                </div>
               </div>
               <input
                 ref={fileInputRef}
@@ -148,14 +210,29 @@ export function AppVersionsPage() {
           </div>
         </div>
 
-        {/* Upload Progress */}
-        {uploadProgress && (
-          <div className={`mt-4 p-3 rounded-lg text-sm text-center ${
-            uploadProgress.startsWith('❌')
-              ? 'bg-red-50 text-red-800 border border-red-200'
-              : 'bg-blue-50 text-blue-800 border border-blue-200'
-          }`}>
-            {uploadProgress}
+        {/* Upload Progress Bar */}
+        {uploading && (
+          <div className="mt-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-on-surface-variant">{uploadPhase}</span>
+              <span className="text-sm font-bold text-primary">{uploadPercent}%</span>
+            </div>
+            <div className="w-full h-2 bg-surface-container-high rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-300 ease-out"
+                style={{
+                  width: `${uploadPercent}%`,
+                  background: uploadPercent >= 100
+                    ? 'linear-gradient(90deg, #22c55e, #16a34a)'
+                    : 'linear-gradient(90deg, var(--color-primary, #6750a4), #8b5cf6)',
+                }}
+              />
+            </div>
+          </div>
+        )}
+        {uploadPhase && !uploading && uploadPhase.startsWith('❌') && (
+          <div className="mt-4 p-3 rounded-lg text-sm text-center bg-red-50 text-red-800 border border-red-200">
+            {uploadPhase}
           </div>
         )}
 
