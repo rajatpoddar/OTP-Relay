@@ -39,6 +39,8 @@ services:
       SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in .env}
       CORS_ORIGINS: '["https://${DOMAIN:-localhost}"]'
       DEBUG: "false"
+    volumes:
+      - uploads:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -59,3 +61,4 @@ services:
 volumes:
   pgdata:
   redisdata:
+  uploads:

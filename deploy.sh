@@ -68,6 +68,11 @@ else
     sudo docker-compose -f $COMPOSE_FILE exec backend python migrate.py 2>/dev/null || true
     echo "✅ Migrations complete"
 fi
+
+# Step 6b: Ensure uploads directory exists on host
+UPLOADS_DIR="$INSTALL_DIR/backend/uploads/apk"
+mkdir -p "$UPLOADS_DIR"
+echo "✅ Uploads directory ready: $UPLOADS_DIR"
 echo ""
 
 # Step 7: Verify
