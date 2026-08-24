@@ -125,9 +125,14 @@ if [ ! -f "./gradlew" ]; then
 fi
 
 chmod +x ./gradlew
-./gradlew clean assembleDebug 2>&1 | tail -10
+./gradlew clean assembleRelease assembleDebug 2>&1 | tail -10
 
-APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
+# Use release if available, fallback to debug
+if [ -f "app/build/outputs/apk/release/app-release.apk" ]; then
+    APK_PATH="app/build/outputs/apk/release/app-release.apk"
+else
+    APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
+fi
 
 if [ ! -f "$APK_PATH" ]; then
     echo "❌ Build failed - APK not found at $APK_PATH"

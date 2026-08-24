@@ -22,13 +22,26 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("../otp-relay-release.keystore")
+            storePassword = "otprelay123"
+            keyAlias = "otp-relay"
+            keyPassword = "otprelay123"
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = true
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+        debug {
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 

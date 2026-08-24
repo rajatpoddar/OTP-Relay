@@ -75,6 +75,7 @@ android/local.properties
 *.hprof
 android/build/
 android/app/build/outputs/apk/
+*.keystore
 
 # Temp logs
 /tmp/
