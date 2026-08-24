@@ -38,11 +38,24 @@ class UpdateManager(private val context: Context) {
 
     companion object {
         private const val TAG = "UpdateManager"
-        private const val CURRENT_VERSION = "1.0.0" // Should match build.gradle versionName
     }
+    
+    private val CURRENT_VERSION: String
+        get() = try {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.0"
+        } catch (e: Exception) {
+            "1.0.0"
+        }
 
     private var downloadId: Long = -1
     private var callback: UpdateCallback? = null
+    
+    /**
+     * Set callback for download completion (used by DashboardScreen)
+     */
+    fun setDownloadCallback(callback: UpdateCallback) {
+        this.callback = callback
+    }
 
     /**
      * Check for app updates from server

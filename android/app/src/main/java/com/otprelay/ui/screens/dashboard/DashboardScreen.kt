@@ -85,6 +85,26 @@ fun DashboardScreen(
             downloadProgress = downloadProgress,
             onUpdateClick = {
                 isDownloading = true
+                // Set up callback for download completion
+                app.updateManager.setDownloadCallback(object : com.otprelay.util.UpdateManager.UpdateCallback {
+                    override fun onUpdateAvailable(version: com.otprelay.data.model.AppVersionResponse, isForceUpdate: Boolean) {}
+                    override fun onNoUpdate() {}
+                    override fun onDownloadComplete(filePath: String) {
+                        isDownloading = false
+                        downloadedFilePath = filePath
+                        showUpdateDialog = false
+                        showInstallDialog = true
+                    }
+                    override fun onDownloadFailed(error: String) {
+                        isDownloading = false
+                    }
+                    override fun onInstallPrompt(filePath: String) {
+                        isDownloading = false
+                        downloadedFilePath = filePath
+                        showUpdateDialog = false
+                        showInstallDialog = true
+                    }
+                })
                 updateInfo!!.downloadUrl?.let { app.updateManager.downloadApk(it) }
             },
             onSkipClick = { showUpdateDialog = false; app.clearUpdateNotification() },

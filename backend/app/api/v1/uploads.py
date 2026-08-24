@@ -1,7 +1,12 @@
 import os
+import re
 import uuid
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from app.core.database import get_db
 from app.core.dependencies import require_super_admin
+from app.models.subscription import AppVersion
 
 router = APIRouter(prefix="/api", tags=["Uploads"])
 
@@ -15,7 +20,10 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 @router.post("/upload/apk")
 async def upload_apk(
     file: UploadFile = File(...),
+    release_notes: str = "",
+    force_update: bool = False,
     current_user=Depends(require_super_admin),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Upload APK file for app distribution.
@@ -51,13 +59,37 @@ async def upload_apk(
         # Also get the file size in MB for display
         size_mb = round(len(content) / (1024 * 1024), 1)
         
+        # Auto-extract version from filename (e.g., otp-relay-v1.2.0.apk → 1.2.0)
+        version_match = re.search(r'v?(\d+\.\d+\.\d+)', file.filename or '')
+        extracted_version = version_match.group(1) if version_match else "1.0.0"
+        
+        # Deactivate previous versions
+        prev_result = await db.execute(select(AppVersion).where(AppVersion.is_active == True))
+        for prev in prev_result.scalars().all():
+            prev.is_active = False
+            db.add(prev)
+        
+        # Auto-create AppVersion entry
+        app_version = AppVersion(
+            version=extracted_version,
+            latest_version=extracted_version,
+            force_update=force_update,
+            release_notes=release_notes or f"Update to v{extracted_version}",
+            download_url=download_url,
+            is_active=True,
+        )
+        db.add(app_version)
+        await db.flush()
+        
         return {
             "filename": filename,
             "original_name": file.filename,
             "size": len(content),
             "size_mb": size_mb,
             "download_url": download_url,
-            "message": f"APK uploaded successfully ({size_mb}MB)",
+            "version": extracted_version,
+            "version_id": str(app_version.id),
+            "message": f"APK uploaded and version v{extracted_version} published!",
         }
         
     except HTTPException:
