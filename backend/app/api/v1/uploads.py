@@ -45,15 +45,19 @@ async def upload_apk(
         with open(filepath, "wb") as f:
             f.write(content)
         
-        # Generate download URL
+        # Generate download URL - use relative path for consistency
         download_url = f"/uploads/apk/{filename}"
+        
+        # Also get the file size in MB for display
+        size_mb = round(len(content) / (1024 * 1024), 1)
         
         return {
             "filename": filename,
             "original_name": file.filename,
             "size": len(content),
+            "size_mb": size_mb,
             "download_url": download_url,
-            "message": "APK uploaded successfully",
+            "message": f"APK uploaded successfully ({size_mb}MB)",
         }
         
     except HTTPException:

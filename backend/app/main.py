@@ -64,8 +64,8 @@ from fastapi.staticfiles import StaticFiles
 import os
 
 uploads_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
-if os.path.exists(uploads_dir):
-    app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
+os.makedirs(os.path.join(uploads_dir, "apk"), exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 
 
 @app.get("/")

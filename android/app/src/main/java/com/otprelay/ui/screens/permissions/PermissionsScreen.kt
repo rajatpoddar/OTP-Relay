@@ -191,6 +191,11 @@ fun PermissionsScreen(
                 }
             )
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Play Protect Warning Card
+            PlayProtectCard()
+
             Spacer(modifier = Modifier.height(32.dp))
 
             // Continue button (always visible)
@@ -325,4 +330,119 @@ private fun hasNotificationPermission(context: Context): Boolean {
 private fun isBatteryOptimizationDisabled(context: Context): Boolean {
     val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
     return powerManager.isIgnoringBatteryOptimizations(context.packageName)
+}
+
+@Composable
+private fun PlayProtectCard() {
+    var expanded by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Play Protect Warning",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp
+                    )
+                    Text(
+                        text = "Google Play Protect may flag this app",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                FilledTonalButton(
+                    onClick = { expanded = !expanded },
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = if (expanded) "Hide" else "How to fix",
+                        fontSize = 12.sp
+                    )
+                }
+            }
+
+            if (expanded) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            text = "When you first open the app, Play Protect may show:\n\"This app can request access to sensitive data\"",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            lineHeight = 18.sp
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "This happens because the app reads SMS for OTP extraction. This is expected behavior.",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            lineHeight = 18.sp
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = "To fix:",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        FixStep("1.", "When Play Protect warning appears, tap \"More details\"")
+                        FixStep("2.", "Tap \"Install anyway\" or \"Allow\"")
+                        FixStep("3.", "The app will install normally")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Alternative: Go to Play Store → Play Protect → Settings → Turn off \"Scan apps with Play Protect\"",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            lineHeight = 16.sp
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FixStep(number: String, text: String) {
+    Row(
+        modifier = Modifier.padding(vertical = 2.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        Text(
+            text = number,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+            text = text,
+            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.onSurface,
+            lineHeight = 18.sp
+        )
+    }
 }
