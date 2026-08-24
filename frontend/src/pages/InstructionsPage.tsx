@@ -255,13 +255,11 @@ export function InstructionsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                <tr><td className="py-2 px-3 font-medium">Office Admin</td><td className="py-2 px-3 font-mono text-xs">admin@otp-relay.gov.in</td><td className="py-2 px-3 font-mono text-xs">admin123</td></tr>
-                <tr><td className="py-2 px-3 font-medium">Staff</td><td className="py-2 px-3 font-mono text-xs">rajesh.kumar@palojori.gov.in</td><td className="py-2 px-3 font-mono text-xs">staff123</td></tr>
-                <tr><td className="py-2 px-3 font-medium">Operator</td><td className="py-2 px-3 font-mono text-xs">amit.kumar@palojori.gov.in</td><td className="py-2 px-3 font-mono text-xs">operator123</td></tr>
+                <tr><td className="py-2 px-3 font-medium">Super Admin</td><td className="py-2 px-3 font-mono text-xs">admin@otp-relay.com</td><td className="py-2 px-3 font-mono text-xs">admin123</td></tr>
               </tbody>
             </table>
           </div>
-          <p className="text-xs text-gray-500 mt-3">⚠️ Change these passwords after first login for security.</p>
+          <p className="text-xs text-gray-500 mt-3">⚠️ Change this password after first login! Other users (Office Admin, Staff, Operators) are created through the admin panel.</p>
         </section>
 
         {/* FAQ */}

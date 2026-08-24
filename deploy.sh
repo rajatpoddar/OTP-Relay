@@ -1,6 +1,6 @@
 #!/bin/bash
-# OTP Relay - One-Click Deploy Script
-# Run this on NAS server after pushing to git
+# OTP Relay - Production Deploy Script
+# Run this on server after pushing to git
 # Usage: ./deploy.sh [--fresh]
 
 set -e
@@ -8,9 +8,9 @@ set -e
 INSTALL_DIR="/volume1/docker/Projects/OTP-Relay"
 COMPOSE_FILE="docker-compose.prod.yml"
 
-echo "════════════════════════════════════════"
+echo "══════════════════════════════════════════"
 echo "  OTP Relay - Deploy Script"
-echo "════════════════════════════════════════"
+echo "══════════════════════════════════════════"
 echo ""
 
 cd "$INSTALL_DIR"
@@ -33,7 +33,7 @@ if [ "$1" = "--fresh" ]; then
     sudo docker volume rm otp-relay_pgdata 2>/dev/null || true
     echo "✅ Volume removed"
 else
-    echo "Step 3: Skipping database reset (use --fresh to reset)"
+    echo "Step 3: Skipping database reset (use --fresh for fresh start)"
 fi
 echo ""
 
@@ -57,15 +57,14 @@ for i in $(seq 1 30); do
 done
 echo ""
 
-# Step 6: Database setup (only if fresh or tables missing)
+# Step 6: Database setup
 if [ "$1" = "--fresh" ]; then
     echo "Step 6: Running migrations and seed..."
     sudo docker-compose -f $COMPOSE_FILE exec backend python migrate.py
     sudo docker-compose -f $COMPOSE_FILE exec backend python seed.py
     echo "✅ Database ready"
 else
-    echo "Step 6: Running alembic migrations..."
-    sudo docker-compose -f $COMPOSE_FILE exec backend alembic upgrade head 2>/dev/null || true
+    echo "Step 6: Running migrations..."
     sudo docker-compose -f $COMPOSE_FILE exec backend python migrate.py 2>/dev/null || true
     echo "✅ Migrations complete"
 fi
@@ -75,37 +74,26 @@ echo ""
 echo "Step 7: Verifying deployment..."
 echo ""
 
-# Check containers
-echo "Container Status:"
-sudo docker-compose -f $COMPOSE_FILE ps
-
-echo ""
-
 # Check API
 echo "API Health:"
-curl -s http://localhost:8880/health && echo ""
-
-echo ""
-echo "Login Test:"
-LOGIN_RESULT=$(curl -s -X POST http://localhost:8880/api/auth/login \
-    -H "Content-Type: application/json" \
-    -d '{"email":"admin@otp-relay.gov.in","password":"admin123"}')
-if echo "$LOGIN_RESULT" | grep -q "access_token"; then
-    echo "✅ Login works!"
+HEALTH=$(curl -s http://localhost:8880/health)
+if echo "$HEALTH" | grep -q "healthy"; then
+    echo "✅ Backend is running"
 else
-    echo "❌ Login failed: $LOGIN_RESULT"
+    echo "❌ Backend health check failed"
 fi
 
 echo ""
-echo "════════════════════════════════════════"
+echo "══════════════════════════════════════════"
 echo "  🚀 Deploy Complete!"
-echo "════════════════════════════════════════"
+echo "══════════════════════════════════════════"
 echo ""
-echo "  Web Dashboard:  https://otp.nregabot.com"
-echo "  API Docs:       https://otp.nregabot.com/api/docs"
+echo "  Dashboard:  https://otp.nregabot.com"
+echo "  API Docs:   https://otp.nregabot.com/api/docs"
 echo ""
-echo "  Admin Login:    admin@otp-relay.gov.in / admin123"
-echo "  Staff Login:    rajesh.kumar@palojori.gov.in / staff123"
-echo "  Operator Login: amit.kumar@palojori.gov.in / operator123"
+echo "  Super Admin Login:"
+echo "  Email:    admin@otp-relay.com"
+echo "  Password: admin123"
 echo ""
-echo "════════════════════════════════════════"
+echo "  ⚠️  Change password after first login!"
+echo ""
